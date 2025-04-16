@@ -13,8 +13,8 @@ This project uses
 1. Tomcat V11.0.4 or just Tomcat V11 within Eclipse
 2. Java 17 (Change in project facets settings)
 3. Dynamic Web Module 6.1 (Change in project facets settings)
-4. mysql-connector-j-9.3.9.jar (download this online and drag and drop in lib folder) (IMPORTANT! Make sure to add this to the build path)
-5. jakarta.servlet-api-5.0.0-javadoc.jar (download this online and drag and drop in lib folder) (IMPORTANT! Make sure to add this to the build path)
+4. mysql-connector-j-9.3.9.jar (download this online and drag and drop in lib folder) (IMPORTANT! Make sure to add this to the build path) (https://dev.mysql.com/downloads/connector/j/)
+5. jakarta.servlet-api-5.0.0-javadoc.jar (download this online and drag and drop in lib folder) (IMPORTANT! Make sure to add this to the build path) (https://repo1.maven.org/maven2/jakarta/servlet/jakarta.servlet-api/5.0.0/)
 
 The above are the project specifications that are required to run this properly.
 
