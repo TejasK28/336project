@@ -38,7 +38,13 @@ public class Login extends HttpServlet {
 		User user = new User(uname, password);
 		
 		MySQL r = new MySQL();
-		boolean res = r.validateUser(user);
+	
+		// Get location of request
+		System.out.println(request.getSession().getAttribute("accType"));
+		String accType = (String) request.getSession().getAttribute("accType");
+		String accTypeJSP = accType + ".jsp";
+
+		boolean res = r.validateUser(user, accType);
 		
 		if(res)
 		{
@@ -49,7 +55,8 @@ public class Login extends HttpServlet {
 		}
 		else
 		{
-			response.getWriter().print("You typed in the wrong credentials. Please retype.");
+			request.getSession().setAttribute("failed", true);
+			response.sendRedirect(accType);
 		}
 	}
 

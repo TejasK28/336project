@@ -11,7 +11,7 @@
 <%
     String uname = (String) session.getAttribute("uname");
     if (uname == null) {
-        response.sendRedirect("login.jsp"); // Not logged in
+        response.sendRedirect("Home.jsp"); // Not logged in
         return;
     }
 %>
