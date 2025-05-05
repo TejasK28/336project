@@ -3,6 +3,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 
 public class MySQL {
 
@@ -60,5 +61,44 @@ public class MySQL {
             e.printStackTrace();
             return false;
         }
+    }
+    
+    public boolean addEmployee(String emp_id, String fname, String lname, 
+    		String email, String password, boolean isAdmin, boolean isCustRep) {	
+    	
+    	String sql = "INSERT INTO Employee(EmployeeID, FirstName, LastName, Email, Password, isAdmin, "
+    			+ "isCustomerRepresentative) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    
+    	try (Connection con = getConnection();
+    		 PreparedStatement ps = con.prepareStatement(sql)) {	
+    		ps.setString(1, emp_id);
+    		ps.setString(2, fname);
+    		ps.setString(3, lname);
+    		ps.setString(4, email);
+    		ps.setString(5, password);
+    		ps.setBoolean(6, isAdmin);
+    		ps.setBoolean(7, isCustRep);
+    	
+    		
+    		try {
+				ps.executeUpdate();
+    		}
+    		catch (SQLIntegrityConstraintViolationException e) {
+    		    System.out.println("Duplicate primary key!");
+    		} 
+    		catch (SQLException e) {
+    		    e.printStackTrace();
+    		}
+
+    		ps.close();
+    		con.close();
+    	}
+    	catch (SQLException e) {
+    		e.printStackTrace();
+    		return false;
+    	}
+    	
+    	
+    	return true;
     }
 }

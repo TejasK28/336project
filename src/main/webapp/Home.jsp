@@ -75,7 +75,7 @@
     <div class="container">
         <div class="header-inner">
             <!-- Website name -->
-            <a href="home.jsp" class="brand">Flight Home</a>
+            <a href="Home.jsp" class="brand">Flight Home</a>
 
             <!-- Login-as dropdown -->
             <label for="roleSelect" class="visually-hidden">Log in as: </label>

@@ -50,8 +50,13 @@ public class Login extends HttpServlet {
 		{
 			// Create a session and store username
 	        request.getSession().setAttribute("uname", uname);
+	        request.getSession().setAttribute("authenticated", true);
 	        // Redirect to welcome page
-	        response.sendRedirect("Welcome.jsp");
+	        
+	        if (accType.equals("Admin"))
+	        	response.sendRedirect(request.getContextPath() + "/Admin");
+	        else
+	        	response.sendRedirect("Welcome.jsp");
 		}
 		else
 		{
