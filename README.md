@@ -5,7 +5,7 @@ Group 15 336 Project
 - Tejas Kandri
 - Shivam Patel
 - Arsal Shaikh
-- Anand Agarwal
+- Aanand Aggarwal
 
 # Dependencies & Versions
 
