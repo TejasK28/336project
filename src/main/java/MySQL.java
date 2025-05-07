@@ -9,7 +9,7 @@ public class MySQL {
 
     private String dburl = "jdbc:mysql://localhost:3306/project";
     private String dbuname = "root";
-    private String dbpassword = "Proj3ct!23"; // TODO REPLACE THIS WITH YOUR PASSWORD
+    private String dbpassword = "Kan29442"; // TODO REPLACE THIS WITH YOUR PASSWORD
     private String dbdriver = "com.mysql.jdbc.Driver";
 
     /*
