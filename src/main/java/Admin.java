@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Servlet implementation class Admin
  */
-@WebServlet({"/Admin", "/CreateEmployee"})
+@WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee"})
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -107,26 +107,27 @@ public class Admin extends HttpServlet {
 			String lname = (String) request.getParameter("LastName");
 			String password = (String) request.getParameter("Password");
 			String email = (String) request.getParameter("Email");
-			boolean isAdmin =  request.getParameter("isAdmin").equals("on") ? true : false;
-			boolean isCustRep =  request.getParameter("isCustRep").equals("on") ? true : false;
-			
+			boolean isAdmin = "on".equals(request.getParameter("isAdmin"));
+			boolean isCustRep = "on".equals(request.getParameter("isCustomerRepresentative"));
 			
 			boolean isCustomer = !(isAdmin || isCustRep);
 			System.out.printf("%s: %s, %s (%s), Email: %s, isAdmin: %s, isCustRep: %s", 
 					emp_id, fname, lname, password, email, isAdmin, isCustRep);
 			response.sendRedirect(request.getContextPath() + "/Admin");
 			
-			if (!(isAdmin && isCustRep)) {
+			if (isCustomer) {
 				// Add to Customer database
-				
-				MySQL r = new MySQL();
-				
-				
-				r.addEmployee(emp_id, fname, lname, email, password, false, false);
 			}
 			else {
 				// Add to Employee table
+				MySQL r = new MySQL();
+				
+				
+				r.addEmployee(emp_id, fname, lname, email, password, isAdmin, isCustRep);
 			}
+		}
+		else if (request.getServletPath().equals("/DeleteEmployee")) {
+			
 		}
 		else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
