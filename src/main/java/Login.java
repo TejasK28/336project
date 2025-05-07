@@ -1,3 +1,4 @@
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException; 
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,7 +9,7 @@ import java.io.IOException;
 /**
  * Servlet implementation class Login
  */
-@WebServlet("/Login")
+@WebServlet({"/Login", "/CustomerLogin", "/AdminLogin", "/CustRepLogin", "/Home", "/CreateCustomer"})
 public class Login extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -25,43 +26,96 @@ public class Login extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		if ("/AdminLogin".equals(request.getServletPath())) {
+			RequestDispatcher dispatcher = request.getRequestDispatcher("AdminLogin.jsp");
+    		dispatcher.forward(request, response);	
+		}
+		else if ("/CustomerLogin".equals(request.getServletPath())) {
+			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerLogin.jsp");
+    		dispatcher.forward(request, response);	
+			
+		}
+		else if ("/CustRepLogin".equals(request.getServletPath())) {
+			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerRepLogin.jsp");
+    		dispatcher.forward(request, response);	
+			
+		}
+		else if ("/Home".equals(request.getServletPath())) {
+			RequestDispatcher dispatcher = request.getRequestDispatcher("Home.jsp");
+    		dispatcher.forward(request, response);	
+		}
+		else if ("/CreateCustomer".equals(request.getServletPath())) {
+			RequestDispatcher dispatcher = request.getRequestDispatcher("CreateCustomer.jsp");
+    		dispatcher.forward(request, response);	
+		}
+		else {
+			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
+    		return;	
+		}
 	}
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String uname = request.getParameter("uname");
-		String password = request.getParameter("password");
-		
-		User user = new User(uname, password);
-		
-		MySQL r = new MySQL();
 	
-		// Get location of request
-		System.out.println(request.getSession().getAttribute("accType"));
-		String accType = (String) request.getSession().getAttribute("accType");
-		String accTypeJSP = accType + ".jsp";
-
-		boolean res = r.validateUser(user, accType);
+		if ("/Login".equals(request.getServletPath())) {
+			String uname = request.getParameter("uname");
+			String password = request.getParameter("password");
+			
+			User user = new User(uname, password);
+			
+			MySQL r = new MySQL();
 		
-		if(res)
-		{
-			// Create a session and store username
-	        request.getSession().setAttribute("uname", uname);
-	        request.getSession().setAttribute("authenticated", true);
-	        // Redirect to welcome page
-	        
-	        if (accType.equals("Admin"))
-	        	response.sendRedirect(request.getContextPath() + "/Admin");
-	        else
-	        	response.sendRedirect("Welcome.jsp");
+			// Get location of request
+			System.out.println(request.getSession().getAttribute("accType"));
+			String accType = (String) request.getSession().getAttribute("accType");
+			String accTypeJSP = accType + ".jsp";
+
+			boolean res = r.validateUser(user, accType);
+			
+			if(res)
+			{
+				// Create a session and store username
+				request.getSession().setAttribute("uname", uname);
+				request.getSession().setAttribute("authenticated", true);
+				// Redirect to welcome page
+				
+				if (accType.equals("Admin"))
+					response.sendRedirect(request.getContextPath() + "/Admin");
+				else
+					response.sendRedirect("Welcome.jsp");
+			}
+			else
+			{
+				request.getSession().setAttribute("failed", true);
+				response.sendRedirect(accType);
+			}
+				
 		}
-		else
-		{
-			request.getSession().setAttribute("failed", true);
-			response.sendRedirect(accType);
+		else if ("/CreateCustomer".equals(request.getServletPath())) {
+		    // Get form parameters
+		    String cust_id = request.getParameter("CustomerID");  // or use "CustomerID" if you update the form
+		    String fname = request.getParameter("FirstName");
+		    String lname = request.getParameter("LastName");
+		    String email = request.getParameter("Email");
+		    String password = request.getParameter("Password");
+		    String phone = request.getParameter("Phone");
+		    String address = request.getParameter("Address");
+
+		    // Call DB method
+		    MySQL r = new MySQL();
+		    boolean success = r.addCustomer(cust_id, fname, lname, email, password, phone, address);
+
+		    if (!success) {
+		        // Set failure flag and forward to form again
+		        request.setAttribute("custCreated", false);
+		        request.getRequestDispatcher("CreateCustomer.jsp").forward(request, response);
+		    } else {
+		        // Redirect to success page or login
+		        request.setAttribute("custCreated", true);
+		        response.sendRedirect(request.getContextPath() + "/CustomerLogin.jsp");
+		    }
 		}
 	}
 

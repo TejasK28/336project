@@ -2,8 +2,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MySQL {
 
@@ -101,4 +106,139 @@ public class MySQL {
     	
     	return true;
     }
+    
+    public boolean editEmployee(String emp_id,
+				String fname,
+				String lname,
+				String email,
+				String password,
+				boolean isAdmin,
+				boolean isCustRep) {
+			String sql = "UPDATE Employee"
+			+ " SET FirstName = ?,"
+			+ "     LastName = ?,"
+			+ "     Email = ?,"
+			+ "     Password = ?,"
+			+ "     isAdmin = ?,"
+			+ "     isCustomerRepresentative = ?"
+			+ " WHERE EmployeeID = ?";
+
+		try (Connection con = getConnection();
+		PreparedStatement ps = con.prepareStatement(sql)) {
+
+			// Bind form values to the UPDATE statement
+			ps.setString(1, fname);
+			ps.setString(2, lname);
+			ps.setString(3, email);
+			ps.setString(4, password);
+			ps.setBoolean(5, isAdmin);
+			ps.setBoolean(6, isCustRep);
+			ps.setString(7, emp_id);
+
+			int rows = ps.executeUpdate();
+			return rows > 0;
+		} 
+		catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+    
+    public Map<String, Object> getEmployee(String emp_id) {
+			String sql = "SELECT * FROM Employee WHERE EmployeeID = ?";
+
+		try (Connection con = getConnection();
+		PreparedStatement ps = con.prepareStatement(sql)) {
+
+			// Bind form values to the UPDATE statement
+			ps.setString(1, emp_id);
+
+			Map<String, Object> employeeMap = new HashMap<>();
+
+			ResultSet rs = ps.executeQuery();
+
+			while (rs.next()) {
+				employeeMap.put("EmployeeID", rs.getString("EmployeeID"));
+				employeeMap.put("FirstName", rs.getString("FirstName"));
+				employeeMap.put("LastName", rs.getString("LastName"));
+				employeeMap.put("Email", rs.getString("Email"));
+				employeeMap.put("isAdmin", rs.getBoolean("isAdmin"));
+				employeeMap.put("isCustomerRepresentative", rs.getBoolean("isCustomerRepresentative"));
+			}
+
+			return employeeMap;
+		} 
+		catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+    	
+    }
+    
+    public boolean deleteEmployee(String emp_id) {
+        Connection conn = getConnection();
+        PreparedStatement stmt = null;
+        try {
+            // Step 2: Prepare the DELETE statement
+            String sql = "DELETE FROM Employee WHERE EmployeeID = ?";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, emp_id);
+
+            // Step 3: Execute the statement
+            int affectedRows = stmt.executeUpdate();
+
+            // Step 4: Return true if at least one row was deleted
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            // Step 5: Close resources
+            try {
+                if (stmt != null) stmt.close();
+                if (conn != null) conn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    public boolean addCustomer(String cust_id, String fname, String lname, 
+            String email, String password, String phone, String address) {
+
+			String sql = "INSERT INTO Customer(CustomerID, FirstName, LastName, Email, Password, Phone, Address) " +
+			  "VALUES (?, ?, ?, ?, ?, ?)";
+
+			try (Connection con = getConnection();
+			PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, cust_id);
+			ps.setString(2, fname);
+			ps.setString(3, lname);
+			ps.setString(4, email);
+			ps.setString(5, password);
+			ps.setString(6, phone);
+			ps.setString(7, address);
+			
+			System.out.println("Does it work?");
+			try {
+				ps.executeUpdate();
+				} catch (SQLIntegrityConstraintViolationException e) {
+				System.out.println("Duplicate primary key!");
+				return false;
+				} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+				}
+
+				} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+
+			return true;
+    }
+ 
+
 }

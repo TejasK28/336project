@@ -1,4 +1,5 @@
 
+import jakarta.servlet.annotation.MultipartConfig;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
@@ -22,7 +23,7 @@ import java.util.Map;
 /**
  * Servlet implementation class Admin
  */
-@WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee"})
+@WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee", "/EditEmployee"})
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -39,68 +40,75 @@ public class Admin extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		MySQL r = new MySQL();
     	// Prevent CreateEmployee route from using GET request
-    	if (!request.getServletPath().equals("/Admin")) {
+    	if (request.getServletPath().equals("/Admin")) {
+			// Check if user is authenticated 
+			
+			HttpSession session = request.getSession(false);
+			if (session == null || session.getAttribute("authenticated") == null) {
+				response.sendRedirect("Home.jsp");
+				return;
+			}
+
+			// Fetch employee data
+			String sql = "SELECT * FROM Employee";
+			List<Map<String, Object>> employeeList = new ArrayList<>();
+
+			try (Connection con = r.getConnection();
+				 PreparedStatement ps = con.prepareStatement(sql);
+				 ResultSet rs = ps.executeQuery()) {
+
+				ResultSetMetaData meta = rs.getMetaData();
+				int columnCount = meta.getColumnCount();
+
+				while (rs.next()) {
+					Map<String, Object> emp_row = new HashMap<>();
+					emp_row.put("EmployeeID", rs.getString("EmployeeID"));
+					emp_row.put("FirstName", rs.getString("FirstName"));
+					emp_row.put("LastName", rs.getString("LastName"));
+					emp_row.put("Email", rs.getString("Email"));
+					emp_row.put("isAdmin", rs.getBoolean("isAdmin"));
+					emp_row.put("isCustomerRepresentative", rs.getBoolean("isCustomerRepresentative"));
+					employeeList.add(emp_row);
+				}
+
+			} catch (SQLException e) {
+				System.out.println(e);
+				return;
+			}
+		   
+			System.out.println("Session ID: " + session.getId());
+			System.out.println("Is New: " + request.getSession().isNew());
+
+			// Put the data in the session
+			request.setAttribute("employees", employeeList);
+
+			// Forward to JSP
+			RequestDispatcher dispatcher = request.getRequestDispatcher("AdminPortal.jsp");
+			dispatcher.forward(request, response);
+			return;
+    	}
+    	else if ("/EditEmployee".equals(request.getServletPath())) {
+    		String emp_id = request.getParameter("username");
+    		System.out.println(emp_id);
+    		request.setAttribute("employee", r.getEmployee(emp_id));
+    		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
+    		dispatcher.forward(request, response);
+    		return;
+    	}
+    	else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
     		return;
     	}
     	
-    	
-    	// Check if user is authenticated 
-    	
-        HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("authenticated") == null) {
-            response.sendRedirect("Home.jsp");
-            return;
-        }
-
-        // Fetch employee data
-        MySQL r = new MySQL();
-        String sql = "SELECT * FROM Employee";
-        List<Map<String, Object>> employeeList = new ArrayList<>();
-
-        try (Connection con = r.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            ResultSetMetaData meta = rs.getMetaData();
-            int columnCount = meta.getColumnCount();
-
-            while (rs.next()) {
-                Map<String, Object> emp_row = new HashMap<>();
-//                for (int i = 1; i <= columnCount; i++) {
-//                	System.out.println(meta.getColumnName(i));
-//                    emp_row.put(meta.getColumnName(i), rs.getObject(i));
-//                }
-                emp_row.put("EmployeeID", rs.getString("EmployeeID"));
-                emp_row.put("FirstName", rs.getString("FirstName"));
-                emp_row.put("LastName", rs.getString("LastName"));
-                emp_row.put("Email", rs.getString("Email"));
-                emp_row.put("isAdmin", rs.getBoolean("isAdmin"));
-                emp_row.put("isCustomerRepresentative", rs.getBoolean("isCustomerRepresentative"));
-                employeeList.add(emp_row);
-            }
-
-        } catch (SQLException e) {
-            System.out.println(e);
-            return;
-        }
-       
-        System.out.println("Session ID: " + session.getId());
-        System.out.println("Is New: " + request.getSession().isNew());
-
-        // Put the data in the session
-        request.setAttribute("employees", employeeList);
-
-        // Forward to JSP
-        RequestDispatcher dispatcher = request.getRequestDispatcher("AdminPortal.jsp");
-        dispatcher.forward(request, response);
     }
 
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		MySQL r = new MySQL();
 		if (request.getServletPath().equals("/CreateEmployee")) {
 			String emp_id = (String) request.getParameter("EmployeeID");
 			String fname = (String) request.getParameter("FirstName");
@@ -120,14 +128,27 @@ public class Admin extends HttpServlet {
 			}
 			else {
 				// Add to Employee table
-				MySQL r = new MySQL();
-				
-				
 				r.addEmployee(emp_id, fname, lname, email, password, isAdmin, isCustRep);
 			}
 		}
 		else if (request.getServletPath().equals("/DeleteEmployee")) {
-			
+			String emp_id = (String) request.getParameter("username");
+			System.out.println(emp_id);
+			r.deleteEmployee(emp_id);
+			response.sendRedirect(request.getContextPath() + "/Admin");
+		}
+		else if (request.getServletPath().equals("/EditEmployee")) {
+			String emp_id = (String) request.getParameter("username");
+		    String firstName = request.getParameter("FirstName");
+		    String lastName = request.getParameter("LastName");
+		    String email = request.getParameter("Email");
+		    boolean isAdmin = "on".equals(request.getParameter("isAdmin"));
+		    boolean isCustomerRep = "on".equals(request.getParameter("isCustomerRepresentative"));
+		    System.out.println("Test: " + emp_id);
+		    r.editEmployee(emp_id, firstName, lastName, email, email, isAdmin, isCustomerRep);
+		    response.sendRedirect(request.getContextPath() + "/Admin");
+    		return;
+//		    response.sendRedirect(request.getContentType() + "/Admin");
 		}
 		else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
