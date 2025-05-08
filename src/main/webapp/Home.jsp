@@ -15,10 +15,16 @@
 <jsp:include page="header.jsp"></jsp:include>
 
 <!-- ===== HERO / MAIN CONTENT PLACEHOLDER ===== -->
+
+<% String uname = (String) session.getAttribute("uname");
+if (uname == null) { %>
 <section class="hero">
     <h1>Book Your Next Flight</h1>
     <p>Fast • Easy • Secure</p>
 </section>
+<% } else { %>
+<h1>Welcome, <%= session.getAttribute("uname") %></h1>
+<% } %>
 
 <!-- ===== SCRIPTS ===== -->
 </body>

@@ -14,7 +14,7 @@
     <main class="main-content">
         <h1 class="page-title">Create New Account</h1>
 
-        <form class="full-form" action="<%= request.getContextPath() %>/CreateEmployee" method="post">
+        <form class="full-form" action="<%= request.getContextPath() %>/CreateCustomer" method="post">
             <div class="form-group">
                 <label for="EmployeeID">Username</label>
                 <input type="text" id="CustomerID" name="CustomerID" required />

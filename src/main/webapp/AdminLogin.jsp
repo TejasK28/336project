@@ -11,21 +11,7 @@
 <body>
 
     <!-- ---------- HEADER (imported from homepage) ---------- -->
-    <header class="site-header">
-        <div class="container">
-            <a href="Home.jsp" class="brand">Flight Home</a>
-
-            <div class="auth-menu">
-                <label for="roleSelect" class="visually-hidden">Log in as:</label>
-                <select id="roleSelect" onchange="handleLogin(this.value)">
-                    <option hidden selected>Select</option>
-                    <option value="customer">Customer</option>
-                    <option value="admin">Administrator</option>
-                    <option value="rep">Customer Rep</option>
-                </select>
-            </div>
-        </div>
-    </header>
+  	<jsp:include page="header.jsp" /> 
 
     <!-- ---------- MAIN CONTENT ---------- -->
     <main class="main-content">
@@ -63,19 +49,6 @@
             %>
         </form>
     </main>
-
-    <!-- ---------- ROLE DROPDOWN HANDLER ---------- -->
-    <script>
-        function handleLogin(role) {
-            if (!role) return;
-            const target = {
-                customer: 'CustomerLogin.jsp',
-                admin:    'AdminLogin.jsp',
-                rep:      'RepLogin.jsp'
-            }[role];
-            if (target) window.location.href = target;
-        }
-    </script>
 
 </body>
 </html>

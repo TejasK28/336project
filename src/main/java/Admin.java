@@ -23,7 +23,8 @@ import java.util.Map;
 /**
  * Servlet implementation class Admin
  */
-@WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee", "/EditEmployee"})
+@WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee", "/EditEmployee",
+			"/EditCustomer", "/DeleteCustomer"})
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -83,6 +84,11 @@ public class Admin extends HttpServlet {
 
 			// Put the data in the session
 			request.setAttribute("employees", employeeList);
+			
+			List<Map<String, Object>> customerList = r.getAllCustomers();
+			System.out.println("Customer Size: " + customerList.size());
+			request.setAttribute("customers", customerList);
+			
 
 			// Forward to JSP
 			RequestDispatcher dispatcher = request.getRequestDispatcher("AdminPortal.jsp");
@@ -93,6 +99,14 @@ public class Admin extends HttpServlet {
     		String emp_id = request.getParameter("username");
     		System.out.println(emp_id);
     		request.setAttribute("employee", r.getEmployee(emp_id));
+    		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
+    		dispatcher.forward(request, response);
+    		return;
+    	}
+    	else if ("/EditCustomer".equals(request.getServletPath())) {
+    		String cust_id = request.getParameter("customerID");
+    		System.out.println(cust_id);
+    		request.setAttribute("customer", r.getEmployee(cust_id));
     		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
     		dispatcher.forward(request, response);
     		return;
@@ -136,6 +150,13 @@ public class Admin extends HttpServlet {
 			System.out.println(emp_id);
 			r.deleteEmployee(emp_id);
 			response.sendRedirect(request.getContextPath() + "/Admin");
+		}
+		else if (request.getServletPath().equals("/DeleteCustomer")) {
+			String cust_id = (String) request.getParameter("customerId");
+			System.out.println(cust_id);
+			r.deleteCustomer(cust_id);
+			response.sendRedirect(request.getContextPath() + "/Admin");
+			return;
 		}
 		else if (request.getServletPath().equals("/EditEmployee")) {
 			String emp_id = (String) request.getParameter("username");
