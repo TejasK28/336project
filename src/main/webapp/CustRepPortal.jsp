@@ -41,7 +41,7 @@
                     %>
                     <tr>
                         <td>
-                            <a href="<%= request.getContextPath() + "/" + airport.get("AirportID") %>">
+                            <a href="<%= request.getContextPath() + "/airport?id=" + airport.get("AirportID") %>">
                                 <%= airport.get("Name") %>
                             </a>
                         </td>
@@ -105,6 +105,76 @@
             <%
                 }
             %>
+        </section>
+
+        <!-- Create Flight Form -->
+        <section>
+            <h2>Create Flight</h2>
+            <form action="<%= request.getContextPath() %>/createFlight" method="post">
+                
+                <label for="flightPlanId">Flight Plan ID</label><br/>
+                <input type="number" id="flightPlanId" name="FlightPlanID" required /><br/><br/>
+
+                <label for="aircraftId">Aircraft ID</label><br/>
+                <input type="number" id="aircraftId" name="AircraftID" required /><br/><br/>
+
+                <label for="flightNumber">Flight Number</label><br/>
+                <input type="number" id="flightNumber" name="FlightNumber" required /><br/><br/>
+
+                <label for="fromAirport">Departing From Airport</label><br/>
+                <select id="fromAirport" name="FromAirportID" required>
+                    <%
+                        for (Map<String,Object> airport : airports) {
+                    %>
+                    <option value="<%= airport.get("AirportID") %>">
+                        <%= airport.get("AirportID") %> - <%= airport.get("Name") %>
+                    </option>
+                    <%
+                        }
+                    %>
+                </select><br/><br/>
+
+                <label for="toAirport">Arriving At Airport</label><br/>
+                <select id="toAirport" name="ToAirportID" required>
+                    <%
+                        for (Map<String,Object> airport : airports) {
+                    %>
+                    <option value="<%= airport.get("AirportID") %>">
+                        <%= airport.get("AirportID") %> - <%= airport.get("Name") %>
+                    </option>
+                    <%
+                        }
+                    %>
+                </select><br/><br/>
+
+                <label for="departTime">Departure Time</label><br/>
+                <input type="datetime-local" id="departTime" name="DepartTime" required /><br/><br/>
+
+                <label for="arrivalTime">Arrival Time</label><br/>
+                <input type="datetime-local" id="arrivalTime" name="ArrivalTime" required /><br/><br/>
+
+                <label for="operatingDays">Operating Days</label><br/>
+                <input type="text" id="operatingDays" name="OperatingDays" maxlength="10" /><br/><br/>
+
+                <button type="submit">Create Flight</button>
+            </form>
+
+            <script>
+                // Ensure Departing and Arriving airports are not the same
+                const fromSelect = document.getElementById('fromAirport');
+                const toSelect = document.getElementById('toAirport');
+
+                function syncOptions() {
+                    const fromVal = fromSelect.value;
+                    Array.from(toSelect.options).forEach(opt => {
+                        opt.disabled = (opt.value === fromVal);
+                    });
+                }
+
+                fromSelect.addEventListener('change', syncOptions);
+                // initialize on page load
+                syncOptions();
+            </script>
         </section>
 
     </main>
