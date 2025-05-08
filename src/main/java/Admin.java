@@ -79,14 +79,11 @@ public class Admin extends HttpServlet {
 				return;
 			}
 		   
-			System.out.println("Session ID: " + session.getId());
-			System.out.println("Is New: " + request.getSession().isNew());
 
 			// Put the data in the session
 			request.setAttribute("employees", employeeList);
 			
 			List<Map<String, Object>> customerList = r.getAllCustomers();
-			System.out.println("Customer Size: " + customerList.size());
 			request.setAttribute("customers", customerList);
 			
 
@@ -97,7 +94,6 @@ public class Admin extends HttpServlet {
     	}
     	else if ("/EditEmployee".equals(request.getServletPath())) {
     		String emp_id = request.getParameter("username");
-    		System.out.println(emp_id);
     		request.setAttribute("employee", r.getEmployee(emp_id));
     		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
     		dispatcher.forward(request, response);
@@ -105,7 +101,6 @@ public class Admin extends HttpServlet {
     	}
     	else if ("/EditCustomer".equals(request.getServletPath())) {
     		String cust_id = request.getParameter("customerID");
-    		System.out.println(cust_id);
     		request.setAttribute("customer", r.getEmployee(cust_id));
     		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
     		dispatcher.forward(request, response);
@@ -133,8 +128,6 @@ public class Admin extends HttpServlet {
 			boolean isCustRep = "on".equals(request.getParameter("isCustomerRepresentative"));
 			
 			boolean isCustomer = !(isAdmin || isCustRep);
-			System.out.printf("%s: %s, %s (%s), Email: %s, isAdmin: %s, isCustRep: %s", 
-					emp_id, fname, lname, password, email, isAdmin, isCustRep);
 			response.sendRedirect(request.getContextPath() + "/Admin");
 			
 			if (isCustomer) {
@@ -147,13 +140,11 @@ public class Admin extends HttpServlet {
 		}
 		else if (request.getServletPath().equals("/DeleteEmployee")) {
 			String emp_id = (String) request.getParameter("username");
-			System.out.println(emp_id);
 			r.deleteEmployee(emp_id);
 			response.sendRedirect(request.getContextPath() + "/Admin");
 		}
 		else if (request.getServletPath().equals("/DeleteCustomer")) {
 			String cust_id = (String) request.getParameter("customerId");
-			System.out.println(cust_id);
 			r.deleteCustomer(cust_id);
 			response.sendRedirect(request.getContextPath() + "/Admin");
 			return;
@@ -163,10 +154,10 @@ public class Admin extends HttpServlet {
 		    String firstName = request.getParameter("FirstName");
 		    String lastName = request.getParameter("LastName");
 		    String email = request.getParameter("Email");
+		    String password = request.getParameter("Password");
 		    boolean isAdmin = "on".equals(request.getParameter("isAdmin"));
 		    boolean isCustomerRep = "on".equals(request.getParameter("isCustomerRepresentative"));
-		    System.out.println("Test: " + emp_id);
-		    r.editEmployee(emp_id, firstName, lastName, email, email, isAdmin, isCustomerRep);
+		    r.editEmployee(emp_id, firstName, lastName, email, password, isAdmin, isCustomerRep);
 		    response.sendRedirect(request.getContextPath() + "/Admin");
     		return;
 //		    response.sendRedirect(request.getContentType() + "/Admin");

@@ -47,6 +47,17 @@
                     session.removeAttribute("failed");   // clear flag for next visit
                 }
             %>
+            <%
+                Boolean noPerm = (Boolean) session.getAttribute("noPerm");
+                if (failed != null && failed) {
+            %>
+                    <div class="error-banner">
+                    	You do not have permission to visit this page!
+                    </div>
+            <%
+                    session.removeAttribute("noPerm");   // clear flag for next visit
+                }
+            %>
         </form>
     </main>
 

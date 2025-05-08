@@ -43,6 +43,45 @@ public class MySQL {
 		return con;
 
 	}
+	
+	
+	/**
+	 * Execute a SELECT query with optional bind parameters, and return
+	 * all rows as a List of Maps (columnLabel → columnValue).
+	 */
+	public List<Map<String, Object>> executeQuery(String sql, Object... params) {
+	    List<Map<String, Object>> rows = new ArrayList<>();
+	    
+	    try (Connection con = getConnection();
+	         PreparedStatement ps = con.prepareStatement(sql)) {
+	        
+	        // bind any provided parameters
+	        for (int i = 0; i < params.length; i++) {
+	            ps.setObject(i + 1, params[i]);
+	        }
+	        
+	        try (ResultSet rs = ps.executeQuery()) {
+	            ResultSetMetaData md = rs.getMetaData();
+	            int colCount = md.getColumnCount();
+	            
+	            while (rs.next()) {
+	                Map<String, Object> row = new HashMap<>();
+	                for (int col = 1; col <= colCount; col++) {
+	                    String label = md.getColumnLabel(col);
+	                    Object value = rs.getObject(col);
+	                    row.put(label, value);
+	                }
+	                rows.add(row);
+	            }
+	        }
+	        
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    
+	    return rows;
+	}
+
 	/*
 	 * This method will validate the user passed in by passing in an SQL statement
 	 * to check if a specific user exists
@@ -330,6 +369,42 @@ public class MySQL {
 	        e.printStackTrace();
 	        return false;
 	    }
+	}
+
+	public List<Map<String, Object>> getAllAirports() {
+		// TODO Auto-generated method stub
+		String sql = "SELECT * FROM Airport";
+		List<Map<String, Object>> airportList = new ArrayList<>();
+
+	    try (Connection con = getConnection();
+	         PreparedStatement ps = con.prepareStatement(sql);
+	         ResultSet rs = ps.executeQuery()) {
+
+	        while (rs.next()) {
+	            Map<String, Object> airport = new HashMap<>();
+	            airport.put("AirportID",        rs.getString("AirportID"));
+	            airport.put("Name",         rs.getString("Name"));
+	            airport.put("City",          rs.getString("City"));
+	            airport.put("Country",             rs.getString("Country"));
+	            
+	            
+	            
+	            
+	            airportList.add(airport);
+	        }
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        // depending on your needs, you could return an empty list or null here
+	    }
+
+	    return airportList;
+	}
+
+	public List<Map<String, Object>> getAllAirlines() {
+		// TODO Auto-generated method stub
+		String sql = "SELECT * FROM Airline";
+		return null;
 	}
 
 
