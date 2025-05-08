@@ -41,7 +41,7 @@
                     %>
                     <tr>
                         <td>
-                            <a href="">
+                            <a href="<%= request.getContextPath() + "/" + airport.get("AirportID") %>">
                                 <%= airport.get("Name") %>
                             </a>
                         </td>

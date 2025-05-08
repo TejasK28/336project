@@ -41,8 +41,6 @@ public class CustRep extends HttpServlet {
 			request.setAttribute("airlines", airlines);
 			
 			
-			
-			
 			RequestDispatcher dispatcher = request.getRequestDispatcher("CustRepPortal.jsp");
     		dispatcher.forward(request, response);
 		}

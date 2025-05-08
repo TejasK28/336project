@@ -386,6 +386,10 @@ public class MySQL {
 	            airport.put("Name",         rs.getString("Name"));
 	            airport.put("City",          rs.getString("City"));
 	            airport.put("Country",             rs.getString("Country"));
+	            
+	            
+	            
+	            
 	            airportList.add(airport);
 	        }
 
@@ -393,9 +397,6 @@ public class MySQL {
 	        e.printStackTrace();
 	        // depending on your needs, you could return an empty list or null here
 	    }
-	    
-	    List<Map<String, Object>> countAirlines = executeQuery("SELECT COUNT(*) as count FROM Airport");
-	    System.out.println("# of Airlines: " + countAirlines.get(0).get("count"));
 
 	    return airportList;
 	}
