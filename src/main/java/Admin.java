@@ -101,8 +101,8 @@ public class Admin extends HttpServlet {
     	}
     	else if ("/EditCustomer".equals(request.getServletPath())) {
     		String cust_id = request.getParameter("customerID");
-    		request.setAttribute("customer", r.getEmployee(cust_id));
-    		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
+    		request.setAttribute("customer", r.getCustomer(cust_id));
+    		RequestDispatcher dispatcher = request.getRequestDispatcher("EditCustomer.jsp");
     		dispatcher.forward(request, response);
     		return;
     	}
@@ -144,24 +144,54 @@ public class Admin extends HttpServlet {
 			response.sendRedirect(request.getContextPath() + "/Admin");
 		}
 		else if (request.getServletPath().equals("/DeleteCustomer")) {
-			String cust_id = (String) request.getParameter("customerId");
+			String cust_id = (String) request.getParameter("customerID");
 			r.deleteCustomer(cust_id);
 			response.sendRedirect(request.getContextPath() + "/Admin");
 			return;
 		}
-		else if (request.getServletPath().equals("/EditEmployee")) {
-			String emp_id = (String) request.getParameter("username");
-		    String firstName = request.getParameter("FirstName");
-		    String lastName = request.getParameter("LastName");
-		    String email = request.getParameter("Email");
-		    String password = request.getParameter("Password");
+		else if ("/EditEmployee".equals(request.getServletPath())) {
+		    String empId    = request.getParameter("username");
+		    String first    = request.getParameter("FirstName");
+		    String last     = request.getParameter("LastName");
+		    String email    = request.getParameter("Email");
+		    String newPass  = request.getParameter("Password");
 		    boolean isAdmin = "on".equals(request.getParameter("isAdmin"));
-		    boolean isCustomerRep = "on".equals(request.getParameter("isCustomerRepresentative"));
-		    r.editEmployee(emp_id, firstName, lastName, email, password, isAdmin, isCustomerRep);
+		    boolean isRep   = "on".equals(request.getParameter("isCustomerRepresentative"));
+
+		    // if the form didn’t supply a password, reload the old one
+		    if (newPass == null || newPass.isEmpty()) {
+		        Map<String,Object> existing = r.getEmployee(empId);
+		        newPass = (String) existing.get("Password");
+		    }
+
+		    r.editEmployee(empId, first, last, email, newPass, isAdmin, isRep);
 		    response.sendRedirect(request.getContextPath() + "/Admin");
-    		return;
-//		    response.sendRedirect(request.getContentType() + "/Admin");
+		    return;
 		}
+
+		else if (request.getServletPath().equals("/EditCustomer")) {
+		    // 1) Pull every field out of the POST
+		    String custId    = request.getParameter("customerId");  // match your hidden input name
+		    String password  = request.getParameter("Password");
+		    String firstName = request.getParameter("FirstName");
+		    String lastName  = request.getParameter("LastName");
+		    String email     = request.getParameter("Email");
+		    String phone     = request.getParameter("Phone");
+		    String address   = request.getParameter("Address");
+
+		    boolean success = r.editCustomer(custId,
+		                                     firstName,
+		                                     lastName,
+		                                     email,
+		                                     password,
+		                                     phone,
+		                                     address);
+		    // 3) Redirect back to the portal
+		    response.sendRedirect(request.getContextPath() + "/Admin");
+		    return;
+		}
+
+
 		else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
     		return;

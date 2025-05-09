@@ -182,6 +182,7 @@ public class MySQL {
 			while (rs.next()) {
 				employeeMap.put("EmployeeID", rs.getString("EmployeeID"));
 				employeeMap.put("FirstName", rs.getString("FirstName"));
+				employeeMap.put("Password",   rs.getString("Password"));
 				employeeMap.put("LastName", rs.getString("LastName"));
 				employeeMap.put("Email", rs.getString("Email"));
 				employeeMap.put("isAdmin", rs.getBoolean("isAdmin"));
