@@ -144,7 +144,7 @@ public class Admin extends HttpServlet {
 			response.sendRedirect(request.getContextPath() + "/Admin");
 		}
 		else if (request.getServletPath().equals("/DeleteCustomer")) {
-			String cust_id = (String) request.getParameter("customerId");
+			String cust_id = (String) request.getParameter("customerID");
 			r.deleteCustomer(cust_id);
 			response.sendRedirect(request.getContextPath() + "/Admin");
 			return;
@@ -162,7 +162,7 @@ public class Admin extends HttpServlet {
     		return;
 //		    response.sendRedirect(request.getContentType() + "/Admin");
 		}
-		else if ("/EditCustomer".equals(request.getServletPath())) {
+		else if (request.getServletPath().equals("/EditCustomer")) {
 		    // 1) Pull every field out of the POST
 		    String custId    = request.getParameter("customerId");  // match your hidden input name
 		    String password  = request.getParameter("Password");
