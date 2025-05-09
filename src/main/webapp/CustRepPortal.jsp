@@ -82,7 +82,9 @@
 					for (Map<String, Object> airline : airlines) {
 					%>
 					<tr>
-						<td><a href="<%= request.getContextPath() + request.getServletPath() + "/" + airline.get("AirlineID") %> "> <%=airline.get("Name")%>
+						<td><a
+							href="<%=request.getContextPath() + request.getServletPath() + "/" + airline.get("AirlineID")%> ">
+								<%=airline.get("Name")%>
 						</a></td>
 						<td><%=airline.get("numSchedFlights")%></td>
 						<td><%=airline.get("numOwnedAircrafts")%></td>
@@ -128,8 +130,8 @@
 					%>
 					<tr>
 						<td><%=flight.get("FlightNumber")%></td>
-						<td><%=flight.get("airline")%></td>
-						<td><%=flight.get("aircraft")%></td>
+						<td><%=flight.get("AirlineID")%></td>
+						<td><%=flight.get("AircraftID")%></td>
 						<td><%=flight.get("capacity")%></td>
 						<td><%=flight.get("seatsAvailable")%></td>
 						<td><%=flight.get("FromAirportID")%></td>
@@ -152,17 +154,38 @@
 			%>
 		</section>
 
-		<!-- Create Flight Form -->
 		<section>
 			<h2>Create Flight</h2>
 			<form action="<%=request.getContextPath()%>/createFlight"
 				method="post">
 
+				<!-- Airline selector -->
+				<label for="airline">Airline</label><br /> <select id="airline"
+					name="AirlineID" required size="5"
+					style="width: 100%; max-width: 300px;">
+					<%
+					if (airlines != null) {
+						for (Map<String, Object> a : airlines) {
+					%>
+					<option value="<%=a.get("AirlineID")%>">
+						<%=a.get("Name")%>
+					</option>
+					<%
+					}
+					}
+					%>
+				</select><br />
+				<br />
+
+				<!-- Flight Number -->
 				<label for="flightNumber">Flight Number</label><br /> <input
 					type="number" id="flightNumber" name="FlightNumber" required
 					min="1" step="1" /><br />
-				<br /> <label for="fromAirport">Departing From Airport</label><br />
-				<select id="fromAirport" name="FromAirportID" required>
+				<br />
+
+				<!-- Departing From -->
+				<label for="fromAirport">Departing From Airport</label><br /> <select
+					id="fromAirport" name="FromAirportID" required>
 					<%
 					for (Map<String, Object> airport : airports) {
 					%>
@@ -174,7 +197,10 @@
 					}
 					%>
 				</select><br />
-				<br /> <label for="toAirport">Arriving At Airport</label><br /> <select
+				<br />
+
+				<!-- Arriving At -->
+				<label for="toAirport">Arriving At Airport</label><br /> <select
 					id="toAirport" name="ToAirportID" required>
 					<%
 					for (Map<String, Object> airport : airports) {
@@ -187,60 +213,52 @@
 					}
 					%>
 				</select><br />
-				<br /> <label for="departTime">Departure Time</label><br /> <input
+				<br />
+
+				<!-- Times -->
+				<label for="departTime">Departure Time</label><br /> <input
 					type="datetime-local" id="departTime" name="DepartTime" required /><br />
 				<br /> <label for="arrivalTime">Arrival Time</label><br /> <input
 					type="datetime-local" id="arrivalTime" name="ArrivalTime" required /><br />
-				<br /> <label for="operatingDays">Operating Days</label><br /> <input
+				<br />
+
+				<!-- Operating Days -->
+				<label for="operatingDays">Operating Days</label><br /> <input
 					type="text" id="operatingDays" name="OperatingDays" maxlength="10"
-					pattern="[A-Za-z0-9,\- ]{1,10}"
+					pattern="[A-Za-z0-9,\\- ]{1,10}"
 					title="Up to 10 letters, numbers, commas, hyphens or spaces" /><br />
 				<br />
-				<!--                 
-<label>Operating Days</label><br/>
-<input type="checkbox" name="OperatingDays" value="Mon" id="dayMon" />
-<label for="dayMon">Monday</label><br/>
-<input type="checkbox" name="OperatingDays" value="Tue" id="dayTue" />
-<label for="dayTue">Tuesday</label><br/>
-<input type="checkbox" name="OperatingDays" value="Wed" id="dayWed" />
-<label for="dayWed">Wednesday</label><br/>
-<input type="checkbox" name="OperatingDays" value="Thu" id="dayThu" />
-<label for="dayThu">Thursday</label><br/>
-<input type="checkbox" name="OperatingDays" value="Fri" id="dayFri" />
-<label for="dayFri">Friday</label><br/>
-<input type="checkbox" name="OperatingDays" value="Sat" id="daySat" />
-<label for="daySat">Saturday</label><br/>
-<input type="checkbox" name="OperatingDays" value="Sun" id="daySun" />
-<label for="daySun">Sunday</label><br/><br/>
-                
- -->
+
 				<button type="submit">Create Flight</button>
+
 				<%
 				if (request.getAttribute("error") != null) {
 				%>
-				<h1><%=request.getAttribute("error")%></h1>
+				<h1 style="color: red;"><%=request.getAttribute("error")%></h1>
 				<%
 				}
 				%>
+
 			</form>
 
 			<script>
-                // Ensure Departing and Arriving airports are not the same
-                const fromSelect = document.getElementById('fromAirport');
-                const toSelect = document.getElementById('toAirport');
+    // Ensure Departing and Arriving airports are not the same
+    const fromSelect = document.getElementById('fromAirport');
+    const toSelect   = document.getElementById('toAirport');
 
-                function syncOptions() {
-                    const fromVal = fromSelect.value;
-                    Array.from(toSelect.options).forEach(opt => {
-                        opt.disabled = (opt.value === fromVal);
-                    });
-                }
+    function syncOptions() {
+      const fromVal = fromSelect.value;
+      Array.from(toSelect.options).forEach(opt => {
+        opt.disabled = (opt.value === fromVal);
+      });
+    }
 
-                fromSelect.addEventListener('change', syncOptions);
-                // initialize on page load
-                syncOptions();
-            </script>
+    fromSelect.addEventListener('change', syncOptions);
+    // initialize on page load
+    syncOptions();
+  </script>
 		</section>
+
 
 	</main>
 </body>

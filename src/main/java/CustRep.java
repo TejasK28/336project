@@ -73,31 +73,32 @@ public class CustRep extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		MySQL db = new MySQL();
-		if ("/createFlight".equals(request.getServletPath())) {
+	    MySQL db = new MySQL();
+	    if ("/createFlight".equals(request.getServletPath())) {
 	        // 1. Read form parameters
-	        String flightNumberStr   = request.getParameter("FlightNumber");
-	        String fromAirportId     = request.getParameter("FromAirportID");
-	        String toAirportId       = request.getParameter("ToAirportID");
-	        String departTimeStr     = request.getParameter("DepartTime");   // e.g. "2025-05-10T14:30"
-	        String arrivalTimeStr    = request.getParameter("ArrivalTime");
-	        String operatingDays     = request.getParameter("OperatingDays");
+	        String flightNumberStr = request.getParameter("FlightNumber");
+	        String airlineId       = request.getParameter("AirlineID");
+	        String fromAirportId   = request.getParameter("FromAirportID");
+	        String toAirportId     = request.getParameter("ToAirportID");
+	        String departTimeStr   = request.getParameter("DepartTime");   // e.g. "2025-05-10T14:30"
+	        String arrivalTimeStr  = request.getParameter("ArrivalTime");
+	        String operatingDays   = request.getParameter("OperatingDays");
 
-	        // 2. Basic validation (you can expand this)
-	        if (flightNumberStr == null || fromAirportId == null || toAirportId == null
+	        // 2. Basic validation
+	        if (flightNumberStr == null || airlineId == null
+	                || fromAirportId == null || toAirportId == null
 	                || departTimeStr == null || arrivalTimeStr == null
 	                || fromAirportId.equals(toAirportId)) {
-	            request.setAttribute("error", "All fields required and airports must differ.");
+	            request.setAttribute("error", "All fields required, airports must differ.");
 	            request.getRequestDispatcher("/WEB-INF/jsp/createFlight.jsp")
 	                   .forward(request, response);
 	            return;
 	        }
 
 	        int flightNumber = Integer.parseInt(flightNumberStr);
+	        int aId          = Integer.parseInt(airlineId);
 
-	        // 3. Convert HTML5 datetime-local to java.sql.Timestamp
-	        //    datetime-local gives "yyyy-MM-dd'T'HH:mm"
+	        // 3. Convert datetime-local to Timestamp
 	        java.sql.Timestamp departTimestamp = java.sql.Timestamp.valueOf(
 	            departTimeStr.replace('T', ' ') + ":00"
 	        );
@@ -105,24 +106,25 @@ public class CustRep extends HttpServlet {
 	            arrivalTimeStr.replace('T', ' ') + ":00"
 	        );
 
-	        // 4. Insert into database
+	        // 4. Insert into database (now including AirlineID)
 	        String sql = "INSERT INTO Flight "
-	                   + "(FlightNumber, FromAirportID, ToAirportID, DepartTime, ArrivalTime, OperatingDays) "
-	                   + "VALUES (?, ?, ?, ?, ?, ?)";
+	                   + "(FlightNumber, AirlineID, FromAirportID, ToAirportID, DepartTime, ArrivalTime, OperatingDays) "
+	                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 	        try (Connection con = db.getConnection();
 	             PreparedStatement ps = con.prepareStatement(sql)) {
 
 	            ps.setInt(1, flightNumber);
-	            ps.setString(2, fromAirportId);
-	            ps.setString(3, toAirportId);
-	            ps.setTimestamp(4, departTimestamp);
-	            ps.setTimestamp(5, arrivalTimestamp);
-	            ps.setString(6, operatingDays);
+	            ps.setInt(2, aId);
+	            ps.setString(3, fromAirportId);
+	            ps.setString(4, toAirportId);
+	            ps.setTimestamp(5, departTimestamp);
+	            ps.setTimestamp(6, arrivalTimestamp);
+	            ps.setString(7, operatingDays);
 
 	            int inserted = ps.executeUpdate();
 	            if (inserted > 0) {
-	                // success: redirect to listing or detail page
+	                // success
 	                response.sendRedirect(request.getContextPath() + "/CustRep");
 	                return;
 	            } else {
@@ -134,10 +136,9 @@ public class CustRep extends HttpServlet {
 	            request.setAttribute("error", "Database error: " + e.getMessage());
 	        }
 
-	        // On failure, re-display form with error
-	        response.sendRedirect(request.getContextPath() + "/CustRep");
+	        // failure: back to form
+	        request.getRequestDispatcher("/CustRep").forward(request, response);
 	    }
-		
 	}
 
 }
