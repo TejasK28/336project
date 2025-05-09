@@ -42,6 +42,12 @@ public class Admin extends HttpServlet {
 	 */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MySQL r = new MySQL();
+		
+		// Ensure authenticated account
+		if (request.getSession().getAttribute("authenticated") == null) {
+			response.sendRedirect(request.getContextPath() + "/Home");
+			return;
+		}
     	// Prevent CreateEmployee route from using GET request
     	if (request.getServletPath().equals("/Admin")) {
 			// Check if user is authenticated 

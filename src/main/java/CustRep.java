@@ -32,7 +32,13 @@ public class CustRep extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
+		// Ensure authenticated account
+		if (request.getSession().getAttribute("authenticated") == null) {
+			response.sendRedirect(request.getContextPath() + "/Home");
+			return;
+		}
+		
+		
 		MySQL r = new MySQL();
 		String pathInfo = request.getPathInfo();
 		if ("/CustRep".equals(request.getServletPath()) && pathInfo == null) {
