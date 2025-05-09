@@ -384,8 +384,14 @@ public class MySQL {
 	}
 
 	public List<Map<String, Object>> getAllAirlines() {
-		// TODO Auto-generated method stub
-		String sql = "SELECT * FROM Airline";
+//		String sql = "SELECT * FROM Airline";
+		String sql =
+			    "SELECT a.Name, " +
+			    "(SELECT COUNT(*) FROM Aircraft WHERE AirlineID = a.AirlineID) AS numOwnedAircrafts, " +
+			    "(SELECT COUNT(*) FROM Flight   WHERE AirlineID = a.AirlineID) AS numSchedFlights " +
+			    "FROM Airline a " +
+			    "ORDER BY a.Name;";
+
 		return executeQuery(sql);
 	}
 
