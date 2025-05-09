@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +23,7 @@ public class MySQL {
 	 * Driver Manager Package
 	 */
 	public void loadDriver(String db) {
-		
+
 		try {
 			Class.forName(dbdriver);
 		} catch (ClassNotFoundException e) {
@@ -43,45 +44,43 @@ public class MySQL {
 		return con;
 
 	}
-	
-	
+
 	/**
-	 * Execute a SELECT query with optional bind parameters, and return
-	 * all rows as a List of Maps (columnLabel → columnValue).
+	 * Execute a SELECT query with optional bind parameters, and return all rows as
+	 * a List of Maps (columnLabel → columnValue).
 	 */
 	public List<Map<String, Object>> executeQuery(String sql, Object... params) {
-	    List<Map<String, Object>> rows = new ArrayList<>();
-	    
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql)) {
-	        
-	        // bind any provided parameters
-	        for (int i = 0; i < params.length; i++) {
-	            ps.setObject(i + 1, params[i]);
-	        }
-	        
-	        try (ResultSet rs = ps.executeQuery()) {
-	            ResultSetMetaData md = rs.getMetaData();
-	            int colCount = md.getColumnCount();
-	            
-	            while (rs.next()) {
-	                Map<String, Object> row = new HashMap<>();
-	                for (int col = 1; col <= colCount; col++) {
-	                    String label = md.getColumnLabel(col);
-	                    Object value = rs.getObject(col);
-	                    row.put(label, value);
-	                }
-	                rows.add(row);
-	            }
-	        }
-	        
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    
-	    return rows;
+		List<Map<String, Object>> rows = new ArrayList<>();
+
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			// bind any provided parameters
+			for (int i = 0; i < params.length; i++) {
+				ps.setObject(i + 1, params[i]);
+			}
+
+			try (ResultSet rs = ps.executeQuery()) {
+				ResultSetMetaData md = rs.getMetaData();
+				int colCount = md.getColumnCount();
+
+				while (rs.next()) {
+					Map<String, Object> row = new HashMap<>();
+					for (int col = 1; col <= colCount; col++) {
+						String label = md.getColumnLabel(col);
+						Object value = rs.getObject(col);
+						row.put(label, value);
+					}
+					rows.add(row);
+				}
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return rows;
 	}
-	
+
 	/*
 	 * This method will validate the user passed in by passing in an SQL statement
 	 * to check if a specific user exists
@@ -232,7 +231,7 @@ public class MySQL {
 
 		String sql = "INSERT INTO Customer(CustomerID, FirstName, LastName, Email, Password, Phone, Address) "
 				+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
-			
+
 		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
 			ps.setString(1, cust_id);
@@ -260,114 +259,101 @@ public class MySQL {
 
 		return true;
 	}
-	
+
 	public List<Map<String, Object>> getAllCustomers() {
-	    String sql = "SELECT * FROM Customer";
-	    List<Map<String, Object>> customerList = new ArrayList<>();
+		String sql = "SELECT * FROM Customer";
+		List<Map<String, Object>> customerList = new ArrayList<>();
 
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
+		try (Connection con = getConnection();
+				PreparedStatement ps = con.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery()) {
 
-	        while (rs.next()) {
-	            Map<String, Object> custRow = new HashMap<>();
-	            custRow.put("CustomerID",        rs.getString("CustomerID"));
-	            custRow.put("FirstName",         rs.getString("FirstName"));
-	            custRow.put("LastName",          rs.getString("LastName"));
-	            custRow.put("Email",             rs.getString("Email"));
-	            custRow.put("Phone",             rs.getString("Phone"));
-	            custRow.put("Address",           rs.getString("Address"));
-	            customerList.add(custRow);
-	        }
+			while (rs.next()) {
+				Map<String, Object> custRow = new HashMap<>();
+				custRow.put("CustomerID", rs.getString("CustomerID"));
+				custRow.put("FirstName", rs.getString("FirstName"));
+				custRow.put("LastName", rs.getString("LastName"));
+				custRow.put("Email", rs.getString("Email"));
+				custRow.put("Phone", rs.getString("Phone"));
+				custRow.put("Address", rs.getString("Address"));
+				customerList.add(custRow);
+			}
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        // depending on your needs, you could return an empty list or null here
-	    }
+		} catch (SQLException e) {
+			e.printStackTrace();
+			// depending on your needs, you could return an empty list or null here
+		}
 
-	    return customerList;
+		return customerList;
 	}
-	
+
 	/**
 	 * Fetch a single customer by ID.
 	 */
 	public Map<String, Object> getCustomer(String cust_id) {
-	    String sql = "SELECT * FROM Customer WHERE CustomerID = ?";
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql)) {
-	        
-	        ps.setString(1, cust_id);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (!rs.next()) return null;
-	            
-	            Map<String, Object> custMap = new HashMap<>();
-	            custMap.put("CustomerID", rs.getString("CustomerID"));
-	            custMap.put("FirstName",  rs.getString("FirstName"));
-	            custMap.put("LastName",   rs.getString("LastName"));
-	            custMap.put("Email",      rs.getString("Email"));
-	            custMap.put("Password",   rs.getString("Password"));
-	            custMap.put("Phone",      rs.getString("Phone"));
-	            custMap.put("Address",    rs.getString("Address"));
-	            return custMap;
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return null;
-	    }
+		String sql = "SELECT * FROM Customer WHERE CustomerID = ?";
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, cust_id);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next())
+					return null;
+
+				Map<String, Object> custMap = new HashMap<>();
+				custMap.put("CustomerID", rs.getString("CustomerID"));
+				custMap.put("FirstName", rs.getString("FirstName"));
+				custMap.put("LastName", rs.getString("LastName"));
+				custMap.put("Email", rs.getString("Email"));
+				custMap.put("Password", rs.getString("Password"));
+				custMap.put("Phone", rs.getString("Phone"));
+				custMap.put("Address", rs.getString("Address"));
+				return custMap;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
 	 * Update an existing customer's details.
 	 */
-	public boolean editCustomer(String cust_id,
-	                            String fname,
-	                            String lname,
-	                            String email,
-	                            String password,
-	                            String phone,
-	                            String address) {
-	    String sql = "UPDATE Customer"
-	               + " SET FirstName = ?,"
-	               + "     LastName = ?,"
-	               + "     Email = ?,"
-	               + "     Password = ?,"
-	               + "     Phone = ?,"
-	               + "     Address = ?"
-	               + " WHERE CustomerID = ?";
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql)) {
-	        
-	        ps.setString(1, fname);
-	        ps.setString(2, lname);
-	        ps.setString(3, email);
-	        ps.setString(4, password);
-	        ps.setString(5, phone);
-	        ps.setString(6, address);
-	        ps.setString(7, cust_id);
-	        
-	        int rows = ps.executeUpdate();
-	        return rows > 0;
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
-	    }
+	public boolean editCustomer(String cust_id, String fname, String lname, String email, String password, String phone,
+			String address) {
+		String sql = "UPDATE Customer" + " SET FirstName = ?," + "     LastName = ?," + "     Email = ?,"
+				+ "     Password = ?," + "     Phone = ?," + "     Address = ?" + " WHERE CustomerID = ?";
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, fname);
+			ps.setString(2, lname);
+			ps.setString(3, email);
+			ps.setString(4, password);
+			ps.setString(5, phone);
+			ps.setString(6, address);
+			ps.setString(7, cust_id);
+
+			int rows = ps.executeUpdate();
+			return rows > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	/**
 	 * Delete a customer by ID.
 	 */
 	public boolean deleteCustomer(String cust_id) {
-	    String sql = "DELETE FROM Customer WHERE CustomerID = ?";
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql)) {
-	        
-	        ps.setString(1, cust_id);
-	        int affected = ps.executeUpdate();
-	        return affected > 0;
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
-	    }
+		String sql = "DELETE FROM Customer WHERE CustomerID = ?";
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, cust_id);
+			int affected = ps.executeUpdate();
+			return affected > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	public List<Map<String, Object>> getAllAirports() {
@@ -375,29 +361,26 @@ public class MySQL {
 		String sql = "SELECT * FROM Airport";
 		List<Map<String, Object>> airportList = new ArrayList<>();
 
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql);
-	         ResultSet rs = ps.executeQuery()) {
+		try (Connection con = getConnection();
+				PreparedStatement ps = con.prepareStatement(sql);
+				ResultSet rs = ps.executeQuery()) {
 
-	        while (rs.next()) {
-	            Map<String, Object> airport = new HashMap<>();
-	            airport.put("AirportID",        rs.getString("AirportID"));
-	            airport.put("Name",         rs.getString("Name"));
-	            airport.put("City",          rs.getString("City"));
-	            airport.put("Country",             rs.getString("Country"));
-	            
-	            
-	            
-	            
-	            airportList.add(airport);
-	        }
+			while (rs.next()) {
+				Map<String, Object> airport = new HashMap<>();
+				airport.put("AirportID", rs.getString("AirportID"));
+				airport.put("Name", rs.getString("Name"));
+				airport.put("City", rs.getString("City"));
+				airport.put("Country", rs.getString("Country"));
 
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        // depending on your needs, you could return an empty list or null here
-	    }
+				airportList.add(airport);
+			}
 
-	    return airportList;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			// depending on your needs, you could return an empty list or null here
+		}
+
+		return airportList;
 	}
 
 	public List<Map<String, Object>> getAllAirlines() {
@@ -411,16 +394,33 @@ public class MySQL {
 		String sql = "SELECT * FROM Flight";
 		return executeQuery(sql);
 	}
-	
+
+	public Map<String, Object> getFlightByFID(String flightID) {
+		String sql = "SELECT * FROM Flight WHERE FlightID = ?";
+		return executeQuery(sql, flightID).get(0);
+	}
+
+	public boolean deleteFlightByFID(String flightID) {
+		String sql = "DELETE FROM Flight WHERE FlightID = ?";
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, flightID);
+			int affected = ps.executeUpdate();
+			return affected > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
 	public List<Map<String, Object>> getFlightsAtAirport(String airport_id) {
 		String sql = "SELECT * FROM Flight WHERE ToAirportID = ? OR FromAirportID = ?";
 		return executeQuery(sql, airport_id, airport_id);
 	}
-	
+
 	public boolean addAircraft(String airlineId, String model, int totalSeats, String configStr) {
-		String sql = "INSERT INTO Aircraft(AirlineID, Model, TotalSeats, ClassConfigurations)" + 
-				"VALUES (?,?,?,?)";
-		
+		String sql = "INSERT INTO Aircraft(AirlineID, Model, TotalSeats, ClassConfigurations)" + "VALUES (?,?,?,?)";
+
 		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
 			ps.setString(1, airlineId);
@@ -444,13 +444,12 @@ public class MySQL {
 		}
 
 		return true;
-		
+
 	}
-	
+
 	public boolean addAirport(String airportID, String name, String city, String country) {
-		String sql = "INSERT INTO Airport(AirportID, Name, City, Country)" + 
-				"VALUES (?,?,?,?)";
-		
+		String sql = "INSERT INTO Airport(AirportID, Name, City, Country)" + "VALUES (?,?,?,?)";
+
 		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
 			ps.setString(1, airportID);
@@ -474,7 +473,45 @@ public class MySQL {
 		}
 
 		return true;
+
+	}
+
+	public boolean updateFlight(int flightId, int flightNumber, int airlineId, String fromAirport, String toAirport,
+			LocalDateTime depart, LocalDateTime arrive, String operatingDays) {
+		String sql = "UPDATE Flight" + " SET FlightNumber = ?," + "     AirlineID    = ?," + "     FromAirportID= ?,"
+				+ "     ToAirportID  = ?," + "     DepartTime   = ?," + "     ArrivalTime  = ?,"
+				+ "     OperatingDays= ?" + " WHERE FlightID = ?";
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setInt(1, flightNumber);
+			ps.setInt(2, airlineId);
+			ps.setString(3, fromAirport);
+			ps.setString(4, toAirport);
+// JDBC 4+ can handle LocalDateTime via setObject
+			ps.setObject(5, depart);
+			ps.setObject(6, arrive);
+			ps.setString(7, operatingDays);
+			ps.setInt(8, flightId);
+
+			int rows = ps.executeUpdate();
+			return rows > 0;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public String getNumArrivingFlightsByAirportID(String airportID) {
+		String sql = "SELECT COUNT(*) as numArriving FROM Flight WHERE ToAirportID = ?";
+		Map<String, Object> count = executeQuery(sql, airportID).get(0);
 		
+		return (String) count.get("numArriving").toString();
+	}
+
+	public Object getNumDepartingFlightByAirportID(String airportID) {
+		String sql = "SELECT COUNT(*) as numDeparting FROM Flight WHERE FromAirportID = ?";
+		Map<String, Object> count = executeQuery(sql, airportID).get(0);
+		return (String) count.get("numDeparting").toString();
 	}
 
 }
