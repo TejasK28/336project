@@ -81,7 +81,7 @@ public class MySQL {
 	    
 	    return rows;
 	}
-
+	
 	/*
 	 * This method will validate the user passed in by passing in an SQL statement
 	 * to check if a specific user exists
@@ -415,6 +415,65 @@ public class MySQL {
 	public List<Map<String, Object>> getFlightsAtAirport(String airport_id) {
 		String sql = "SELECT * FROM Flight WHERE ToAirportID = ? OR FromAirportID = ?";
 		return executeQuery(sql, airport_id, airport_id);
+	}
+	
+	public boolean addAircraft(String airlineId, String model, int totalSeats, String configStr) {
+		String sql = "INSERT INTO Aircraft(AirlineID, Model, TotalSeats, ClassConfigurations)" + 
+				"VALUES (?,?,?,?)";
+		
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, airlineId);
+			ps.setString(2, model);
+			ps.setInt(3, totalSeats);
+			ps.setString(4, configStr);
+
+			try {
+				ps.executeUpdate();
+			} catch (SQLIntegrityConstraintViolationException e) {
+				System.out.println("Duplicate primary key!");
+				return false;
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
+		
+	}
+	
+	public boolean addAirport(String airportID, String name, String city, String country) {
+		String sql = "INSERT INTO Airport(AirportID, Name, City, Country)" + 
+				"VALUES (?,?,?,?)";
+		
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, airportID);
+			ps.setString(2, name);
+			ps.setString(3, city);
+			ps.setString(4, country);
+
+			try {
+				ps.executeUpdate();
+			} catch (SQLIntegrityConstraintViolationException e) {
+				System.out.println("Duplicate primary key!");
+				return false;
+			} catch (SQLException e) {
+				e.printStackTrace();
+				return false;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
 		
 	}
 

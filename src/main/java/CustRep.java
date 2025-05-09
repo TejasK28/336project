@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Servlet implementation class CustRep
  */
-@WebServlet({"/CustRep/*", "/createFlight"})
+@WebServlet({"/CustRep/*", "/createFlight", "/createAircraft", "/createAirport"})
 public class CustRep extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -80,7 +80,7 @@ public class CustRep extends HttpServlet {
 	        String airlineId       = request.getParameter("AirlineID");
 	        String fromAirportId   = request.getParameter("FromAirportID");
 	        String toAirportId     = request.getParameter("ToAirportID");
-	        String departTimeStr   = request.getParameter("DepartTime");   // e.g. "2025-05-10T14:30"
+	        String departTimeStr   = request.getParameter("DepartTime");
 	        String arrivalTimeStr  = request.getParameter("ArrivalTime");
 	        String operatingDays   = request.getParameter("OperatingDays");
 
@@ -139,6 +139,58 @@ public class CustRep extends HttpServlet {
 	        // failure: back to form
 	        request.getRequestDispatcher("/CustRep").forward(request, response);
 	    }
+	    else if ("/createAircraft".equals(request.getServletPath())) {
+	    	 String airlineId     = request.getParameter("AirlineID");
+	         String model         = request.getParameter("Model");
+	         String totalSeatsStr = request.getParameter("TotalSeats");
+	         String ecoStr        = request.getParameter("EconomySeats");
+	         String bizStr        = request.getParameter("BusinessSeats");
+	         String firstStr      = request.getParameter("FirstClassSeats");
+	         
+	         String configStr = "";
+	         
+	         // parse & validate
+	         int total = Integer.parseInt(totalSeatsStr);
+	         int eco   = Integer.parseInt(ecoStr);
+	         int biz   = Integer.parseInt(bizStr);
+	         int first = Integer.parseInt(firstStr);
+	         
+	         if (total <= 0 || eco <= 0 || biz <= 0 || first <= 0 || total != eco + biz + first)  {
+	        	 request.setAttribute("createAircraftError", "Error in seat configuration!");
+				request.getRequestDispatcher("/CustRep").forward(request, response);
+				return;
+	         }
+	         else {
+	        	 configStr = "E:" + eco + "," + "B:" + biz + "," + "F:" + first;
+	         }
+	         
+	         System.out.println(configStr);
+	         
+	         if (!db.addAircraft(airlineId, model, total, configStr)) {
+	        	 request.setAttribute("createAircraftError", "Database error!");
+				request.getRequestDispatcher("/CustRep").forward(request, response);
+				return;
+	         }
+	         
+	         response.sendRedirect(request.getContextPath() + "/CustRep");
+             return;
+	    }
+	    else if ("/createAirport".equals(request.getServletPath())) {
+	    	String airportId = request.getParameter("AirportID");
+	        String name      = request.getParameter("Name");
+	        String city      = request.getParameter("City");
+	        String country   = request.getParameter("Country");
+	        
+	        if (!db.addAirport(airportId, name, city, country)) {
+	        	System.out.println("Database error in Airport insertion!");
+	        	 request.setAttribute("createAirportError", "Database error!");
+				request.getRequestDispatcher("/CustRep").forward(request, response);
+				return;
+	        }
+	         response.sendRedirect(request.getContextPath() + "/CustRep");
+             return;
+	    }
+	    
 	}
 
 }

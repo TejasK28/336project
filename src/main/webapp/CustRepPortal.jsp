@@ -28,6 +28,7 @@
 				<thead>
 					<tr>
 						<th>Airport Name</th>
+						<th>Identifier Code</th>
 						<th>City</th>
 						<th>Country</th>
 						<th># of Flights Arriving</th>
@@ -43,6 +44,7 @@
 							href="<%=request.getContextPath() + "/CustRep/airport/" + airport.get("AirportID")%>">
 								<%=airport.get("Name")%>
 						</a></td>
+						<td><%=airport.get("AirportID")%></td>
 						<td><%=airport.get("City")%></td>
 						<td><%=airport.get("Country")%></td>
 						<td><%=airport.get("numArriving")%></td>
@@ -174,14 +176,12 @@
 					}
 					}
 					%>
-				</select><br />
-				<br />
+				</select><br /> <br />
 
 				<!-- Flight Number -->
 				<label for="flightNumber">Flight Number</label><br /> <input
 					type="number" id="flightNumber" name="FlightNumber" required
-					min="1" step="1" /><br />
-				<br />
+					min="1" step="1" /><br /> <br />
 
 				<!-- Departing From -->
 				<label for="fromAirport">Departing From Airport</label><br /> <select
@@ -196,8 +196,7 @@
 					<%
 					}
 					%>
-				</select><br />
-				<br />
+				</select><br /> <br />
 
 				<!-- Arriving At -->
 				<label for="toAirport">Arriving At Airport</label><br /> <select
@@ -212,8 +211,7 @@
 					<%
 					}
 					%>
-				</select><br />
-				<br />
+				</select><br /> <br />
 
 				<!-- Times -->
 				<label for="departTime">Departure Time</label><br /> <input
@@ -258,6 +256,133 @@
     syncOptions();
   </script>
 		</section>
+
+
+		<!-- Create Aircraft Form -->
+		<section>
+			<h2>Create Aircraft</h2>
+			<form id="createAircraftForm"
+				action="<%=request.getContextPath()%>/createAircraft" method="post"
+				onsubmit="return validateAircraftSeats();">
+
+				<!-- Airline selector -->
+				<label for="aircAirline">Airline</label><br /> <select
+					id="aircAirline" name="AirlineID" required size="5"
+					style="width: 100%; max-width: 300px;">
+					<%
+					if (airlines != null) {
+						for (Map<String, Object> a : airlines) {
+					%>
+					<option value="<%=a.get("AirlineID")%>">
+						<%=a.get("Name")%>
+					</option>
+					<%
+					}
+					}
+					%>
+				</select><br />
+				<br />
+
+				<!-- Model -->
+				<label for="aircModel">Model</label><br /> <input type="text"
+					id="aircModel" name="Model" required maxlength="20" /><br />
+				<br />
+
+				<!-- Total Seats -->
+				<label for="aircTotalSeats">Total Seats</label><br /> <input
+					type="number" id="aircTotalSeats" name="TotalSeats" required
+					min="1" /><br />
+				<br />
+
+				<!-- Class Configurations -->
+				<fieldset>
+					<legend>Class Configuration</legend>
+
+					<label for="aircEco">Economy Seats</label><br /> <input
+						type="number" id="aircEco" name="EconomySeats" required min="0" /><br />
+					<br /> <label for="aircBiz">Business Seats</label><br /> <input
+						type="number" id="aircBiz" name="BusinessSeats" required min="0" /><br />
+					<br /> <label for="aircFirst">First Class Seats</label><br /> <input
+						type="number" id="aircFirst" name="FirstClassSeats" required
+						min="0" /><br />
+					<br />
+				</fieldset>
+
+				<button type="submit">Create Aircraft</button>
+				<h1 id="aircraftError" style="color: red; display: none;"></h1>
+			</form>
+		</section>
+
+		<!-- Create Airport Form -->
+		<section>
+			<h2>Create Airport</h2>
+			<form id="createAirportForm"
+				action="<%=request.getContextPath()%>/createAirport" method="post"
+				onsubmit="return validateAirportID();">
+
+				<!-- AirportID -->
+				<label for="apID">Airport ID</label><br /> <input type="text"
+					id="apID" name="AirportID" required pattern="[A-Za-z0-9]{3}"
+					maxlength="3" title="Exactly 3 letters or numbers" /><br />
+				<br />
+
+				<!-- Name -->
+				<label for="apName">Name</label><br /> <input type="text"
+					id="apName" name="Name" required maxlength="150" /><br />
+				<br />
+
+				<!-- City -->
+				<label for="apCity">City</label><br /> <input type="text"
+					id="apCity" name="City" required maxlength="100" /><br />
+				<br />
+
+				<!-- Country -->
+				<label for="apCountry">Country</label><br /> <input type="text"
+					id="apCountry" name="Country" required maxlength="50" /><br />
+				<br />
+
+				<button type="submit">Create Airport</button>
+				<h1 id="airportError" style="color: red; display: none;"></h1>
+			</form>
+		</section>
+
+		<script>
+// ---- Aircraft seats validation ----
+function validateAircraftSeats() {
+  const total = parseInt(document.getElementById('aircTotalSeats').value, 10) || 0;
+  const eco   = parseInt(document.getElementById('aircEco').value,        10) || 0;
+  const biz   = parseInt(document.getElementById('aircBiz').value,        10) || 0;
+  const first = parseInt(document.getElementById('aircFirst').value,      10) || 0;
+  const errorEl = document.getElementById('aircraftError');
+
+  if (eco + biz + first !== total) {
+    errorEl.textContent = 
+      `Class seats (${eco + biz + first}) must equal Total Seats (${total}).`;
+    errorEl.style.display = 'block';
+    return false;
+  }
+
+  errorEl.style.display = 'none';
+  return true;
+}
+
+// ---- AirportID format validation ----
+function validateAirportID() {
+  const id = document.getElementById('apID').value;
+  const errorEl = document.getElementById('airportError');
+  const valid = /^[A-Za-z0-9]{3}$/.test(id);
+
+  if (!valid) {
+    errorEl.textContent = 'AirportID must be exactly 3 letters or numbers.';
+    errorEl.style.display = 'block';
+    return false;
+  }
+
+  errorEl.style.display = 'none';
+  return true;
+}
+</script>
+
 
 
 	</main>

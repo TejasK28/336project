@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/styles.css">
 </head>
 <body>
-
+	<jsp:include page="header.jsp"></jsp:include>
 <%
     // Retrieve the list of flights for this airport
     List<Map<String,Object>> flights =
