@@ -186,12 +186,23 @@ public class Admin extends HttpServlet {
 		                                     password,
 		                                     phone,
 		                                     address);
-		    // 3) Redirect back to the portal
 		    response.sendRedirect(request.getContextPath() + "/Admin");
 		    return;
 		}
+		else if (request.getServletPath().equals("/CreateCustomer")) {
+		    String custId    = request.getParameter("CustomerID");
+		    String password  = request.getParameter("Password");
+		    String firstName = request.getParameter("FirstName");
+		    String lastName  = request.getParameter("LastName");
+		    String email     = request.getParameter("Email");
+		    String phone     = request.getParameter("Phone");
+		    String address   = request.getParameter("Address");
 
+		    boolean ok = r.addCustomer(custId, firstName, lastName, email, password, phone, address);
 
+		    response.sendRedirect(request.getContextPath() + "/Admin");
+		    return;
+		}
 		else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
     		return;

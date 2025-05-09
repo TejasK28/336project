@@ -193,6 +193,20 @@
 				<input type="submit" value="Create Employee" />
 			</div>
 		</form>
+		
+		
+		<!-- Create new Customer -->
+
+		<form action="${pageContext.request.contextPath}/CreateCustomer?fromAdmin=true"
+	      method="get" style="display:inline">
+		  <button type="submit" class="btn-green">Add New Customer</button>
+		</form>
+		
+				
+		
+		
+		
+		
 	</main>
 	<%-- 	<script src="<%= request.getContextPath() %>/js/adminPortal.js"></script> --%>
 </body>

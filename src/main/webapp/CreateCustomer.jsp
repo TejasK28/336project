@@ -1,22 +1,33 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+         pageEncoding="UTF-8"%>
+<%
+    // capture the “did we come here from the admin portal?” flag
+    String fromAdmin = request.getParameter("fromAdmin");
+%>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Create Account</title>
+    <title>Create New Customer</title>
     <link rel="stylesheet" href="<%= request.getContextPath() %>/css/styles.css"> 
 </head>
 <body>
-
-    <!-- Include shared header -->
     <jsp:include page="header.jsp" />
 
     <main class="main-content">
-        <h1 class="page-title">Create New Account</h1>
+        <h1 class="page-title">Create New Customer</h1>
 
-        <form class="full-form" action="<%= request.getContextPath() %>/CreateCustomer" method="post">
+        <form class="full-form"
+              action="<%= request.getContextPath() %>/CreateCustomer"
+              method="post">
+              
+            <%-- if we came from AdminPortal, carry that flag through --%>
+            <% if (fromAdmin != null) { %>
+                <input type="hidden" name="fromAdmin" value="<%= fromAdmin %>" />
+            <% } %>
+
             <div class="form-group">
-                <label for="EmployeeID">Username</label>
+                <label for="CustomerID">Customer ID</label>
                 <input type="text" id="CustomerID" name="CustomerID" required />
             </div>
 
@@ -32,7 +43,7 @@
 
             <div class="form-group">
                 <label for="Email">Email</label>
-                <input type="text" id="Email" name="Email" required />
+                <input type="email" id="Email" name="Email" required />
             </div>
 
             <div class="form-group">
@@ -51,9 +62,19 @@
             </div>
 
             <div class="submit-row">
-                <input type="submit" value="Create Account" class="btn-green" />
+                <input type="submit" value="Create Customer" class="btn-green" />
             </div>
         </form>
+
+        <%-- offer a back link if admin came in here --%>
+        <% if (fromAdmin != null) { %>
+            <p style="margin-top:1em;">
+                <a href="<%= request.getContextPath() %>/Admin"
+                   class="btn btn-secondary">
+                   ← Back to Admin Portal
+                </a>
+            </p>
+        <% } %>
     </main>
 </body>
 </html>

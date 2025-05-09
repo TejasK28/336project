@@ -35,7 +35,9 @@
                 <input type="submit" name="login" value="Login">
             </div>
             
-            <a href="<%= request.getContextPath() %>/CreateEmployee">New? Create account here!</a>
+			<a href="<%= request.getContextPath() %>/CreateCustomer">
+			  New? Create account here!
+			</a>
 
             <%-- Show the error banner only after a failed attempt --%>
             <%
