@@ -149,19 +149,26 @@ public class Admin extends HttpServlet {
 			response.sendRedirect(request.getContextPath() + "/Admin");
 			return;
 		}
-		else if (request.getServletPath().equals("/EditEmployee")) {
-			String emp_id = (String) request.getParameter("username");
-		    String firstName = request.getParameter("FirstName");
-		    String lastName = request.getParameter("LastName");
-		    String email = request.getParameter("Email");
-		    String password = request.getParameter("Password");
+		else if ("/EditEmployee".equals(request.getServletPath())) {
+		    String empId    = request.getParameter("username");
+		    String first    = request.getParameter("FirstName");
+		    String last     = request.getParameter("LastName");
+		    String email    = request.getParameter("Email");
+		    String newPass  = request.getParameter("Password");
 		    boolean isAdmin = "on".equals(request.getParameter("isAdmin"));
-		    boolean isCustomerRep = "on".equals(request.getParameter("isCustomerRepresentative"));
-		    r.editEmployee(emp_id, firstName, lastName, email, password, isAdmin, isCustomerRep);
+		    boolean isRep   = "on".equals(request.getParameter("isCustomerRepresentative"));
+
+		    // if the form didn’t supply a password, reload the old one
+		    if (newPass == null || newPass.isEmpty()) {
+		        Map<String,Object> existing = r.getEmployee(empId);
+		        newPass = (String) existing.get("Password");
+		    }
+
+		    r.editEmployee(empId, first, last, email, newPass, isAdmin, isRep);
 		    response.sendRedirect(request.getContextPath() + "/Admin");
-    		return;
-//		    response.sendRedirect(request.getContentType() + "/Admin");
+		    return;
 		}
+
 		else if (request.getServletPath().equals("/EditCustomer")) {
 		    // 1) Pull every field out of the POST
 		    String custId    = request.getParameter("customerId");  // match your hidden input name
