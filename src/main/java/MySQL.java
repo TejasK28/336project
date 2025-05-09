@@ -243,7 +243,6 @@ public class MySQL {
 			ps.setString(6, phone);
 			ps.setString(7, address);
 
-			System.out.println("Does it work?");
 			try {
 				ps.executeUpdate();
 			} catch (SQLIntegrityConstraintViolationException e) {
@@ -404,8 +403,19 @@ public class MySQL {
 	public List<Map<String, Object>> getAllAirlines() {
 		// TODO Auto-generated method stub
 		String sql = "SELECT * FROM Airline";
-		return null;
+		return executeQuery(sql);
 	}
 
+	public List<Map<String, Object>> getAllFlights() {
+		// TODO Auto-generated method stub
+		String sql = "SELECT * FROM Flight";
+		return executeQuery(sql);
+	}
+	
+	public List<Map<String, Object>> getFlightsAtAirport(String airport_id) {
+		String sql = "SELECT * FROM Flight WHERE ToAirportID = ? OR FromAirportID = ?";
+		return executeQuery(sql, airport_id, airport_id);
+		
+	}
 
 }
