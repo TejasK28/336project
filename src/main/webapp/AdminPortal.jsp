@@ -125,7 +125,7 @@
 					<td>
 						<form action="<%=request.getContextPath()%>/EditCustomer"
 							method="get" style="display: inline;">
-							<input type="hidden" name="customerId"
+							<input type="hidden" name="customerID"
 								value="<%=cust.get("CustomerID")%>" />
 							<button type="submit" class="edit-btn btn-green">Edit</button>
 						</form>
@@ -135,8 +135,9 @@
 					<td>
 						<form action="<%=request.getContextPath()%>/DeleteCustomer"
 							method="post" style="margin: 0;">
-							<input type="hidden" name="customerId"
-								value="<%=cust.get("CustomerID")%>" />
+							<!-- in AdminPortal.jsp -->
+							<input type="hidden" name="customerID" value="<%=cust.get("CustomerID")%>" />
+
 							<button type="submit" class="btn-red"
 								onclick="return confirm('Are you sure you want to delete this customer?');">
 								Delete</button>

@@ -101,8 +101,8 @@ public class Admin extends HttpServlet {
     	}
     	else if ("/EditCustomer".equals(request.getServletPath())) {
     		String cust_id = request.getParameter("customerID");
-    		request.setAttribute("customer", r.getEmployee(cust_id));
-    		RequestDispatcher dispatcher = request.getRequestDispatcher("EditEmployee.jsp");
+    		request.setAttribute("customer", r.getCustomer(cust_id));
+    		RequestDispatcher dispatcher = request.getRequestDispatcher("EditCustomer.jsp");
     		dispatcher.forward(request, response);
     		return;
     	}
@@ -162,6 +162,29 @@ public class Admin extends HttpServlet {
     		return;
 //		    response.sendRedirect(request.getContentType() + "/Admin");
 		}
+		else if ("/EditCustomer".equals(request.getServletPath())) {
+		    // 1) Pull every field out of the POST
+		    String custId    = request.getParameter("customerId");  // match your hidden input name
+		    String password  = request.getParameter("Password");
+		    String firstName = request.getParameter("FirstName");
+		    String lastName  = request.getParameter("LastName");
+		    String email     = request.getParameter("Email");
+		    String phone     = request.getParameter("Phone");
+		    String address   = request.getParameter("Address");
+
+		    boolean success = r.editCustomer(custId,
+		                                     firstName,
+		                                     lastName,
+		                                     email,
+		                                     password,
+		                                     phone,
+		                                     address);
+		    // 3) Redirect back to the portal
+		    response.sendRedirect(request.getContextPath() + "/Admin");
+		    return;
+		}
+
+
 		else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
     		return;
