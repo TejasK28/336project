@@ -42,7 +42,7 @@ public class Login extends HttpServlet {
 			RequestDispatcher dispatcher = request.getRequestDispatcher("Home.jsp");
 			dispatcher.forward(request, response);
 		} else if ("/CreateCustomer".equals(request.getServletPath())) {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("CreateCustomer.jsp");
+			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerLogin.jsp");
 			dispatcher.forward(request, response);
 		} else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
@@ -112,41 +112,39 @@ public class Login extends HttpServlet {
 			}
 
 		} else if ("/CreateCustomer".equals(request.getServletPath())) {
-			// Get form parameters
+		    // 1) read form fields
+		    String custId    = request.getParameter("CustomerID");
+		    String firstName = request.getParameter("FirstName");
+		    String lastName  = request.getParameter("LastName");
+		    String email     = request.getParameter("Email");
+		    String password  = request.getParameter("Password");
+		    String phone     = request.getParameter("Phone");
+		    String address   = request.getParameter("Address");
 
-			System.out.println("Testaetasdf");
-			String cust_id = request.getParameter("CustomerID"); // or use "CustomerID" if you update the form
-			String fname = request.getParameter("FirstName");
-			String lname = request.getParameter("LastName");
-			String email = request.getParameter("Email");
-			String password = request.getParameter("Password");
-			String phone = request.getParameter("Phone");
-			String address = request.getParameter("Address");
+		    // 2) add the customer
+		    boolean success = r.addCustomer(custId, firstName, lastName, email,
+		                                    password, phone, address);
 
-			System.out.println("Customer form data received:");
-			System.out.println("CustomerID: " + cust_id);
-			System.out.println("FirstName: " + fname);
-			System.out.println("LastName: " + lname);
-			System.out.println("Email: " + email);
-			System.out.println("Password: " + password);
-			System.out.println("Phone: " + phone);
-			System.out.println("Address: " + address);
+		    // 3) detect if we came from AdminPortal
+		    String fromAdmin = request.getParameter("fromAdmin");
 
-			// Call DB method
-			boolean success = r.addCustomer(cust_id, fname, lname, email, password, phone, address);
-
-			System.out.println("Did it add a customer: " + success);
-
-			if (!success) {
-				// Set failure flag and forward to form again
-				request.setAttribute("custCreated", false);
-				request.getRequestDispatcher("CreateCustomer.jsp").forward(request, response);
-			} else {
-				// Redirect to success page or login
-				request.setAttribute("custCreated", true);
-				response.sendRedirect(request.getContextPath() + "/CustomerLogin.jsp");
-			}
+		    if (!success) {
+		        // insertion failed: re-show the form (you can also set an error message)
+		        request.setAttribute("custCreated", false);
+		        request.getRequestDispatcher("CreateCustomer.jsp")
+		               .forward(request, response);
+		    } else {
+		        // successful: if we came from the admin, go back there
+		        if ("true".equals(fromAdmin)) {
+		            response.sendRedirect(request.getContextPath() + "/Admin");
+		        } else {
+		            // normal flow for new customer signup
+		            response.sendRedirect(request.getContextPath() + "/CustomerLogin.jsp");
+		        }
+		    }
+		    return;
 		}
+
 	}
 
 }
