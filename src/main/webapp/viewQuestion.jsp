@@ -33,7 +33,7 @@
     <textarea name="message"
               rows="3"
               required
-              placeholder="Your answer…"></textarea><br/>
+              placeholder="Your answer"></textarea><br/>
     <button type="submit">Send Answer</button>
   </form>
 </c:if>

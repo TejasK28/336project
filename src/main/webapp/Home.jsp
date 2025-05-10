@@ -86,6 +86,15 @@ if (uname == null) { %>
 </section>
 
 
+<section class="search-questions">
+  <form action="${pageContext.request.contextPath}/SearchQuestions" method="get">
+    <label for="searchQ">Search Q&A:</label>
+    <input type="text" id="searchQ" name="q" placeholder="keyword…">
+    <button type="submit">🔎</button>
+  </form>
+</section>
+
+
 
 
 <% } %>
