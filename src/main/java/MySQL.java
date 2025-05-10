@@ -234,7 +234,6 @@ public class MySQL {
 				+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-
 			ps.setString(1, cust_id);
 			ps.setString(2, fname);
 			ps.setString(3, lname);
