@@ -18,8 +18,7 @@ public class MySQL {
 
 	private String dburl = "jdbc:mysql://localhost:3306/project";
 	private String dbuname = "root";
-	private String dbpassword = "rootrootroot"; // TODO REPLACE THIS WITH YOUR PASSWORD
-	private String dbdriver = "com.mysql.jdbc.Driver";
+	private String dbdriver = "com.mysql.cj.jdbc.Driver";
 
 	/*
 	 * Helper method to load the Driver package so it can communicate with the
@@ -669,10 +668,38 @@ public class MySQL {
 		                      Date.valueOf(departDate),
 		                      Date.valueOf(departDate));
 		}
+	
+	public Map<String, Object> getMonthlySalesReport(int year, int month) {
+	    String sql = "SELECT " +
+	                 "COUNT(*) as numberOfTickets, " +
+	                 "COALESCE(SUM(TicketFare), 0) as totalFare, " +
+	                 "COALESCE(SUM(BookingFee), 0) as totalBookingFee, " +
+	                 "COALESCE(SUM(TicketFare + BookingFee), 0) as totalRevenue " +
+	                 "FROM Ticket " + // Ensure your table is named 'Ticket'
+	                 "WHERE YEAR(PurchaseDateTime) = ? AND MONTH(PurchaseDateTime) = ?";
 
+	    // 'executeQuery' is your existing method in MySQL.java
+	    List<Map<String, Object>> results = executeQuery(sql, year, month);
 
-	
-	
-	
+	    if (!results.isEmpty() && results.get(0) != null) {
+	        Map<String, Object> reportData = results.get(0);
+	        // Ensure all expected keys have non-null values, defaulting to 0 or BigDecimal.ZERO
+	        // COUNT(*) in MySQL returns BIGINT (Long in Java)
+	        reportData.putIfAbsent("numberOfTickets", 0L);
+	        reportData.putIfAbsent("totalFare", java.math.BigDecimal.ZERO);
+	        reportData.putIfAbsent("totalBookingFee", java.math.BigDecimal.ZERO);
+	        reportData.putIfAbsent("totalRevenue", java.math.BigDecimal.ZERO);
+	        return reportData;
+	    } else {
+	        // This case handles if executeQuery returns an empty list (e.g., on SQL error)
+	        // or if the query itself correctly returns no rows (which COALESCE should handle by returning 0s)
+	        Map<String, Object> emptyResult = new HashMap<>();
+	        emptyResult.put("numberOfTickets", 0L);
+	        emptyResult.put("totalFare", java.math.BigDecimal.ZERO);
+	        emptyResult.put("totalBookingFee", java.math.BigDecimal.ZERO);
+	        emptyResult.put("totalRevenue", java.math.BigDecimal.ZERO);
+	        return emptyResult;
+	    }
+	}
 
 }

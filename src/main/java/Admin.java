@@ -20,11 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * Servlet implementation class Admin
  */
 @WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee", "/EditEmployee",
-			"/EditCustomer", "/DeleteCustomer"})
+             "/EditCustomer", "/DeleteCustomer", "/SalesReport"})
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -37,9 +38,7 @@ public class Admin extends HttpServlet {
     }
     
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MySQL r = new MySQL();
 		// Ensure authenticated account
