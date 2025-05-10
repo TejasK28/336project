@@ -88,6 +88,19 @@ public class CustRep extends HttpServlet {
 
 			request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
 			return;
+		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/editAirport")) {
+			String aid = request.getParameter("airportID");
+			request.setAttribute("airport", r.getAirportByID(aid));
+
+			request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
+			return;
+		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/airline")) {
+			String airlineID = request.getParameter("airlineId");
+			request.setAttribute("ownedAircrafts", r.getOwnedAircraftsByAirlineID(airlineID));
+
+			request.getRequestDispatcher("/viewAircrafts.jsp").forward(request, response);
+			return;
+		
 		} else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
 			return;
@@ -270,6 +283,57 @@ public class CustRep extends HttpServlet {
 				response.sendRedirect(request.getContextPath() + "/CustRep");
 			}
 			return;
+		}
+		else if ("/editAirport".equals(request.getServletPath())) {
+		    // 1. Read parameters
+			String oldAID = request.getParameter("originalAID");
+		    String newAID   = request.getParameter("identifierCode");
+		    String name         = request.getParameter("Name");
+		    String city         = request.getParameter("City");
+		    String country      = request.getParameter("Country");
+
+		    // 2. Basic validation
+		    if (oldAID == null || newAID == null || name == null || city == null || country == null
+		        || oldAID.isBlank() || newAID.isBlank() || name.isBlank() || city.isBlank() || country.isBlank()) {
+		        request.setAttribute("error", "All fields are required.");
+		        // re‐forward back to edit form; ensure the airport map is still set
+		        // (you may need to re-fetch it from DB by originalId)
+		        request.setAttribute("airport", db.getAirportByID(oldAID));
+		        request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
+		        return;
+		    }
+
+		    // 3. Perform update
+		    try {
+		        // signature: boolean updateAirport(String oldId, String newId, String name, String city, String country)
+		        // If you don't allow changing the PK, pass originalId twice
+		        boolean ok = db.updateAirport(newAID, name, city, country, oldAID);
+
+		        if (!ok) {
+					request.setAttribute("airport", db.getAirportByID(oldAID));
+		            request.setAttribute("error", "Update failed.");
+		            request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
+		            return;
+		        }
+
+		    } catch (Exception e) {
+		        throw new ServletException("Error updating airport", e);
+		    }
+
+		    // 4. Redirect back
+			response.sendRedirect(request.getContextPath() + "/CustRep");
+		    return;
+		}
+		else if ("/deleteAirport".equals(request.getServletPath())) {
+			String aID = request.getParameter("airportID");
+			if (!db.deleteAirport(aID)) {
+				request.setAttribute("airportDeleteError", "Error when deleting airport!");
+				response.sendRedirect(request.getContextPath() + "/CustRep");
+				return;
+			}
+			else {
+				response.sendRedirect(request.getContextPath() + "/CustRep");
+			}
 		}
 
 	}

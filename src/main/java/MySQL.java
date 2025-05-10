@@ -387,6 +387,7 @@ public class MySQL {
 //		String sql = "SELECT * FROM Airline";
 		String sql =
 			    "SELECT a.Name, " +
+			    "a.AirlineID," + 
 			    "(SELECT COUNT(*) FROM Aircraft WHERE AirlineID = a.AirlineID) AS numOwnedAircrafts, " +
 			    "(SELECT COUNT(*) FROM Flight   WHERE AirlineID = a.AirlineID) AS numSchedFlights " +
 			    "FROM Airline a " +
@@ -481,6 +482,52 @@ public class MySQL {
 		return true;
 
 	}
+	
+	public boolean deleteAirport(String airportID) {
+		String sql = "DELETE FROM Airport WHERE AirportID = ?";
+		try (Connection con = getConnection();
+		         PreparedStatement ps = con.prepareStatement(sql)) {
+
+		        ps.setString(1, airportID);
+		        int rowsDeleted = ps.executeUpdate();
+		        return rowsDeleted > 0;
+
+		    } catch (SQLException e) {
+		        // You might use a logger instead of printStackTrace in real code
+		        e.printStackTrace();
+		        return false;
+		    }
+		
+	}
+	
+	public boolean updateAirport(String airportID, String name, String city, String country, String originalAID) {
+		String sql = "UPDATE Airport " +
+		        "SET AirportID = ?, " +
+		        "    City      = ?, " +
+		        "    Country   = ?, " +
+		        "    Name      = ?  " +
+		        "WHERE AirportID = ?";
+		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+
+			ps.setString(1, airportID);
+			ps.setString(2, city);
+			ps.setString(3, country);
+			ps.setString(4, name);
+			ps.setString(5, originalAID);
+
+			int rows = ps.executeUpdate();
+			return rows > 0;
+		} 
+		catch (SQLIntegrityConstraintViolationException ex) {
+	        System.err.println("Duplicate AirportID: " + airportID);
+	        return false;
+
+	    }
+		catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
 
 	public boolean updateFlight(int flightId, int flightNumber, int airlineId, String fromAirport, String toAirport,
 			LocalDateTime depart, LocalDateTime arrive, String operatingDays) {
@@ -518,6 +565,16 @@ public class MySQL {
 		String sql = "SELECT COUNT(*) as numDeparting FROM Flight WHERE FromAirportID = ?";
 		Map<String, Object> count = executeQuery(sql, airportID).get(0);
 		return (String) count.get("numDeparting").toString();
+	}
+
+	public Map<String, Object> getAirportByID(String aid) {
+		String sql = "SELECT * FROM Airport WHERE AirportID = ?";
+		return executeQuery(sql, aid).get(0);
+	}
+
+	public List<Map<String, Object>> getOwnedAircraftsByAirlineID(String airlineID) {
+		String sql = "SELECT * FROM Aircraft WHERE AirlineID = ?";
+		return executeQuery(sql, airlineID);
 	}
 
 }

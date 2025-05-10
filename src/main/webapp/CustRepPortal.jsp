@@ -11,6 +11,12 @@
 	<jsp:include page="header.jsp" />
     <main class="main-content">
         <h1 class="page-title">Customer Representative Dashboard</h1>
+        
+        <%
+       	if (request.getAttribute("airportDeleteError") != null) {
+        %>
+        <span color="red"><%= request.getAttribute("airportDeleteError") %></span>
+        <% } %>
 
         <!-- Tables Grid -->
         <div class="tables-grid">
@@ -27,6 +33,8 @@
                             <th>Country</th>
                             <th>Arrivals</th>
                             <th>Departures</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -38,6 +46,18 @@
                             <td><%=ap.get("Country")%></td>
                             <td><%=ap.get("numArriving")%></td>
                             <td><%=ap.get("numDeparting")%></td>
+                            <td>
+                          	<form action="<%= request.getContextPath() %>/CustRep/editAirport"  method="get">
+                          		<input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>">
+								<button style="background-color: green;">Edit</button>
+                          	</form> 
+							</td>
+                            <td>
+                          	<form action="<%= request.getContextPath() %>/deleteAirport"  method="post">
+                          		<input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>">
+								<button style="background-color: red;">Delete</button>
+                          	</form> 
+                            </td>
                         </tr>
                         <% } %>
                     </tbody>
@@ -62,7 +82,7 @@
                     <tbody>
                         <% for (Map<String,Object> al:airlines) { %>
                         <tr>
-                            <td><%=al.get("Name")%></td>
+                            <td><a href="<%= request.getContextPath() + "/CustRep/airline?airlineId=" + al.get("AirlineID")%>"><%=al.get("Name")%></a></td>
                             <td><%=al.get("numSchedFlights")%></td>
                             <td><%=al.get("numOwnedAircrafts")%></td>
                         </tr>

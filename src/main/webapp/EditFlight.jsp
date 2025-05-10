@@ -37,8 +37,8 @@
         <select id="airline" name="AirlineID" required size="5">
             <% if (airlines != null) {
                 for (Map<String,Object> a : airlines) {
-                    String aid = a.get("AirlineID").toString();
-                    String fid = flight.get("AirlineID").toString();
+                    String aid = String.valueOf(a.get("AirlineID"));
+                    String fid = String.valueOf(flight.get("AirlineID"));
             %>
             <option value="<%=aid%>" <%= aid.equals(fid) ? "selected" : "" %>>
                 <%= a.get("Name") %>
