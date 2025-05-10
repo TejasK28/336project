@@ -27,8 +27,11 @@
               .addEventListener('change', toggleReturnDate);
     });
   </script>
+  <link rel="stylesheet" href="<%= request.getContextPath() %>/css/styles.css"> 
 </head>
 <body>
+<jsp:include page="header.jsp"></jsp:include>
+
   <h1>Search Flights</h1>
   <form action="<%= request.getContextPath() %>/SearchFlightsServlet" method="post">
 
