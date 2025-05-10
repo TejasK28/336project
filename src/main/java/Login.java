@@ -42,7 +42,7 @@ public class Login extends HttpServlet {
 			RequestDispatcher dispatcher = request.getRequestDispatcher("Home.jsp");
 			dispatcher.forward(request, response);
 		} else if ("/CreateCustomer".equals(request.getServletPath())) {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerLogin.jsp");
+			RequestDispatcher dispatcher = request.getRequestDispatcher("CreateCustomer.jsp");
 			dispatcher.forward(request, response);
 		} else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
