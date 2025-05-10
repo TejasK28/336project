@@ -577,4 +577,20 @@ public class MySQL {
 		return executeQuery(sql, airlineID);
 	}
 
+	public boolean deleteAircraft(String acID) {
+		String sql = "DELETE FROM Aircraft WHERE AircraftID = ?";
+		try (Connection con = getConnection();
+		         PreparedStatement ps = con.prepareStatement(sql)) {
+
+		        ps.setString(1, acID);
+		        int rowsDeleted = ps.executeUpdate();
+		        return rowsDeleted > 0;
+
+		    } catch (SQLException e) {
+		        // You might use a logger instead of printStackTrace in real code
+		        e.printStackTrace();
+		        return false;
+		    }
+	}
+
 }

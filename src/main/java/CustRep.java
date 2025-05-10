@@ -17,8 +17,9 @@ import java.util.Map;
 /**
  * Servlet implementation class CustRep
  */
-@WebServlet({ "/CustRep/*", "/createFlight", "/createAircraft", "/createAirport", "/deleteFlight", "/deleteAirport",
-		"/editFlight", "/editAirport" })
+@WebServlet({ "/CustRep/*", "/createFlight", "/createAircraft", 
+	"/createAirport", "/deleteFlight", "/deleteAirport",
+		"/editFlight", "/editAirport", "/deleteAircraft"})
 public class CustRep extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -333,6 +334,18 @@ public class CustRep extends HttpServlet {
 			}
 			else {
 				response.sendRedirect(request.getContextPath() + "/CustRep");
+			}
+		}
+		else if ("/deleteAircraft".equals(request.getServletPath())) {
+			String acID = request.getParameter("aircraftID");
+			String referer = request.getHeader("Referer");
+			if (!db.deleteAircraft(acID)) {
+				request.setAttribute("aircraftDeleteError", "Error when deleting aircraft!");
+				response.sendRedirect(referer);
+				return;
+			}
+			else {
+				response.sendRedirect(referer);
 			}
 		}
 

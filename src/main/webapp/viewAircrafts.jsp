@@ -33,6 +33,8 @@
           <th>Model</th>
           <th>Total Seats</th>
           <th>Seat Configuration</th>
+          <th>Edit</th>
+          <th>Delete</th>
         </tr>
       </thead>
       <tbody>
@@ -42,6 +44,22 @@
             <td><%= String.valueOf(ac.get("Model")) %></td>
             <td><%= String.valueOf(ac.get("TotalSeats")) %></td>
             <td><%= String.valueOf(ac.get("ClassConfigurations")) %></td>
+            <td>
+           	
+           	<form method="get"	action="<%= request.getContextPath() + "/editAircraft" %>">
+           		<input type="hidden" name="aircraftID" value="<%= ac.get("AircraftID") %>">
+           		<button type="submit" style="background-color: green;">Edit</button>	
+           	</form>
+           	 
+            </td>
+            <td>
+            
+           	<form method="post"	action="<%= request.getContextPath() + "/deleteAircraft" %>">
+           		<input type="hidden" name="aircraftID" value="<%= ac.get("AircraftID") %>">
+           		<button type="submit" style="background-color: red;">Delete</button>	
+           	</form>
+           	
+           	</td>
           </tr>
         <% } %>
       </tbody>

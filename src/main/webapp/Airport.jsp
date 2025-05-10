@@ -58,7 +58,8 @@
 								<input type="hidden" name="flightId"
 									value="<%=flight.get("FlightID")%>" />
 								<button type="submit" style="background-color: red;">Delete</button>
-							</form> 
+							</form>
+							<button type="submit" style="background-color: blue;">View Passengers</button> 
 						</td>
 					</tr>
 					<%
