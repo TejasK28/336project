@@ -86,7 +86,6 @@
       session.removeAttribute("FlightAdded");
     }
   %>
-
   <h2>Filter Flights</h2>
   <form onsubmit="return false;">
     <label for="priceFilter">Max Price:</label>
