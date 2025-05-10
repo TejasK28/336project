@@ -1,15 +1,18 @@
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MySQL {
 
@@ -593,5 +596,87 @@ public class MySQL {
 		        return false;
 		    }
 	}
+	
+	
+	/**
+	 * One-way search on an exact date, now including flight-plan flags.
+	 */
+	public List<Map<String,Object>> searchOneWay(
+	    String fromAirport,
+	    String toAirport,
+	    LocalDate departDate,
+	    String sortBy)
+	{
+	  // whitelist to prevent SQL-injection
+	  var allowed = Set.of("f.DepartTime","f.ArrivalTime","duration","price");
+	  if (!allowed.contains(sortBy)) sortBy = "f.DepartTime";
+
+	// in searchOneWay (and similarly searchFlexible), drop the LEFT JOIN:
+	  String sql =
+	    "SELECT f.FlightID,\n" +
+	    "       f.FromAirportID,\n" +
+	    "       f.ToAirportID,\n" +
+	    "       f.DepartTime,\n" +
+	    "       f.ArrivalTime,\n" +
+	    "       TIMESTAMPDIFF(MINUTE,f.DepartTime,f.ArrivalTime) AS duration,\n" +
+	    "       f.StandardFare AS price,\n" +
+	    "       a.Name          AS AirlineName\n" +
+	    "  FROM Flight f\n" +
+	    "  JOIN Airline a ON a.AirlineID = f.AirlineID\n" +
+	    " WHERE f.FromAirportID    = ?\n" +
+	    "   AND f.ToAirportID      = ?\n" +
+	    "   AND DATE(f.DepartTime) = ?\n" +
+	    " ORDER BY " + sortBy;
+
+
+	  return executeQuery(sql,
+	                      fromAirport,
+	                      toAirport,
+	                      Date.valueOf(departDate));
+	}
+
+	/**
+	 * ±3-day flexible search, now including flight-plan flags.
+	 */
+	public List<Map<String,Object>> searchFlexible(
+	    String fromAirport,
+	    String toAirport,
+	    LocalDate departDate,
+	    String sortBy)
+	{
+	  var allowed = Set.of("f.DepartTime","f.ArrivalTime","duration","price");
+	  if (!allowed.contains(sortBy)) sortBy = "f.DepartTime";
+
+	  String sql =
+	    "SELECT f.FlightID,\n" +
+	    "       f.FromAirportID,\n" +
+	    "       f.ToAirportID,\n" +
+	    "       f.DepartTime,\n" +
+	    "       f.ArrivalTime,\n" +
+	    "       TIMESTAMPDIFF(MINUTE, f.DepartTime, f.ArrivalTime) AS duration,\n" +
+	    "       f.StandardFare AS price,\n" +
+	    "       a.Name          AS AirlineName,\n" +
+	    "       fp.isDirectTrip,\n" +
+	    "       fp.isRoundTrip\n" +
+	    "  FROM Flight f\n" +
+	    "  JOIN Airline a     ON a.AirlineID   = f.AirlineID\n" +
+	    "  LEFT JOIN FlightPlan fp ON fp.FlightID = f.FlightID\n" +
+	    " WHERE f.FromAirportID    = ?\n" +
+	    "   AND f.ToAirportID      = ?\n" +
+	    "   AND DATE(f.DepartTime)\n" +
+	    "       BETWEEN DATE_SUB(?, INTERVAL 3 DAY)\n" +
+	    "           AND DATE_ADD(?, INTERVAL 3 DAY)\n" +
+	    " ORDER BY " + sortBy;
+
+	  return executeQuery(sql,
+	                      fromAirport,
+	                      toAirport,
+	                      Date.valueOf(departDate),
+	                      Date.valueOf(departDate));
+	}
+
+	
+	
+	
 
 }
