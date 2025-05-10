@@ -68,5 +68,5 @@ The above are the project specifications that are required to run this properly.
 ❌ Edit flight reservations for a customer  
 ❌ Add, Edit, Delete information for aircrafts, airports, and flights  
 ❌ Retrieve a list of all the passengers who are on the waiting list of a particular flight  
-❌ Produce a list of all flights for a given airport (departing and arriving)  
+✅ Produce a list of all flights for a given airport (departing and arriving)  
 ❌ Reply to user’s questions  

@@ -5,11 +5,21 @@
 
         <div class="auth-menu">
             <%
-                String uname = (String) session.getAttribute("uname");
+                String uname   = (String) session.getAttribute("uname");
+                String accType = (String) session.getAttribute("accType");
                 if (uname != null) {
             %>
                 <span>Hello, <%= uname %>!</span>
-                <form action="<%= request.getContextPath() %>/Logout" method="post" style="display: inline;">
+
+                <% if ("Admin".equals(accType)) { %>
+                    <a href="<%= request.getContextPath() %>/Admin">Portal Home</a>
+                <% } else if ("CustRep".equals(accType)) { %>
+                    <a href="<%= request.getContextPath() %>/CustRep">Portal Home</a>
+                <% } %>
+
+                <form action="<%= request.getContextPath() %>/Logout"
+                      method="post"
+                      style="display:inline;">
                     <button type="submit">Logout</button>
                 </form>
             <%
@@ -17,7 +27,7 @@
             %>
                 <label for="roleSelect" class="visually-hidden">Log in as:</label>
                 <select id="roleSelect" onchange="handleLogin(this.value)">
-                    <option hidden selected>Select</option>
+                    <option hidden selected>Select role</option>
                     <option value="customer">Customer</option>
                     <option value="admin">Administrator</option>
                     <option value="rep">Customer Rep</option>
@@ -31,12 +41,13 @@
 
 <script>
 function handleLogin(role) {
+    var ctx = '<%= request.getContextPath() %>';
     if (role === 'customer') {
-        window.location.href = '<%= request.getContextPath() %>/CustomerLogin';
+        window.location.href = ctx + '/CustomerLogin';
     } else if (role === 'admin') {
-        window.location.href = '<%= request.getContextPath() %>/AdminLogin';
+        window.location.href = ctx + '/AdminLogin';
     } else if (role === 'rep') {
-        window.location.href = '<%= request.getContextPath() %>/CustRepLogin';
+        window.location.href = ctx + '/CustRepLogin';
     }
 }
 </script>
