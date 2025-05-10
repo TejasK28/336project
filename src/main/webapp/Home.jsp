@@ -67,6 +67,34 @@ if (uname == null) { %>
 <!-- This section focuses on the first 6 bullet points of user functionality -->
 
 
+<p>
+  <a href="<%=request.getContextPath()%>/MyQuestions">
+    📝 My Questions
+  </a>
+</p>
+
+
+<!-- This section focuses on the question form -->
+<section class="ask-form">
+  <h2>Have a question?</h2>
+  <form action="${pageContext.request.contextPath}/PostQuestion" method="post">
+    <input type="hidden" name="customerId" value="${sessionScope.uname}" />
+    <textarea name="message" rows="3" required
+              placeholder="Type your question here…"></textarea>
+    <button type="submit">Send to support</button>
+  </form>
+</section>
+
+
+<section class="search-questions">
+  <form action="${pageContext.request.contextPath}/SearchQuestions" method="get">
+    <label for="searchQ">Search Q&A:</label>
+    <input type="text" id="searchQ" name="q" placeholder="keyword…">
+    <button type="submit">🔎</button>
+  </form>
+</section>
+
+
 
 
 <% } %>

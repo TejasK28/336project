@@ -4,6 +4,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,16 +34,22 @@ public class Login extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
+		String path = request.getServletPath();
+		  HttpSession sess = request.getSession();
+		
+		
 		// TODO Auto-generated method stub
-		if ("/AdminLogin".equals(request.getServletPath())) {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("AdminLogin.jsp");
-			dispatcher.forward(request, response);
-		} else if ("/CustomerLogin".equals(request.getServletPath())) {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerLogin.jsp");
-			dispatcher.forward(request, response);
-		} else if ("/CustRepLogin".equals(request.getServletPath())) {
-			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerRepLogin.jsp");
-			dispatcher.forward(request, response);
+		  if ("/AdminLogin".equals(path)) {
+			    sess.setAttribute("accType", "Admin");
+			    request.getRequestDispatcher("AdminLogin.jsp").forward(request, response);
+
+			  } else if ("/CustomerLogin".equals(path)) {
+			    sess.setAttribute("accType", "Customer");
+			    request.getRequestDispatcher("CustomerLogin.jsp").forward(request, response);
+
+			  } else if ("/CustRepLogin".equals(path)) {
+			    sess.setAttribute("accType", "CustRep");
+			    request.getRequestDispatcher("CustomerRepLogin.jsp").forward(request, response);
 		} else if ("/Home".equals(request.getServletPath())) {
 			MySQL db = new MySQL();
 			
