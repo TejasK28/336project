@@ -41,7 +41,7 @@ The above are the project specifications that are required to run this properly.
 ⚠️ Filter the list of flights by various criteria (price, number of stops, airline, take-off time, landing time)  @shivam add # of stops
 
 ✅ Browse questions and answers  
-❌ Search questions and answers by keywords  
+✅ Search questions and answers by keywords  
 ❌ Make flight reservations/buy the ticket  
 ❌ Enter the waiting list if the flight is full  
 ❌ View all the past flight reservations with their details  
