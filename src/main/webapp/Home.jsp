@@ -24,6 +24,12 @@ if (uname == null) { %>
 </section>
 <% } else { %>
 <h1>Welcome, <%= session.getAttribute("uname") %></h1>
+
+<!-- This section focuses on the first 6 bullet points of user functionality -->
+
+
+
+
 <% } %>
 
 <!-- ===== SCRIPTS ===== -->
