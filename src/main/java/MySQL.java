@@ -757,6 +757,32 @@ public class MySQL {
 	  """;
 	  return executeQuery(sql, questionId);
 	}
+	
+	
+	public Map<String,Object> getQuestionById(int id) {
+		  String sql = """
+		    SELECT q.QuestionID, q.CustomerID, q.SubmitDateTime, q.Message,
+		           c.FirstName, c.LastName
+		      FROM Question q
+		      JOIN Customer c ON c.CustomerID = q.CustomerID
+		     WHERE q.QuestionID = ?""";
+		  return executeQuery(sql, id).get(0);
+		}
+	
+	
+	public List<Map<String,Object>> getQuestionsByCustomer(String customerId) {
+	    String sql = """
+	      SELECT q.QuestionID,
+	             q.SubmitDateTime,
+	             q.Message
+	        FROM Question q
+	       WHERE q.CustomerID = ?
+	       ORDER BY q.SubmitDateTime DESC
+	    """;
+	    return executeQuery(sql, customerId);
+	}
+
+
 
 	
 	

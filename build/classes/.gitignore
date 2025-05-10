@@ -4,3 +4,10 @@
 /Registration.class
 /SearchFlightsServlet.class
 /Customer.class
+/PostQuestionServlet.class
+/ListQuestionsServlet.class
+/Snippet.class
+/ViewQuestionServlet.class
+/PostAnswerServlet.class
+/MyQuestionsServlet.class
+/SearchQuestionsServlet.class
