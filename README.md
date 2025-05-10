@@ -38,7 +38,7 @@ The above are the project specifications that are required to run this properly.
 ✅ One way or roundtrip on flexible dates (+/- 3 days)  
 ✅ Browse the resulting flights  
 ✅ Sort flights by different criteria (price, take-off time, landing time, duration of flight)  
-❌ Filter the list of flights by various criteria (price, number of stops, airline, take-off time, landing time)  
+⚠️ Filter the list of flights by various criteria (price, number of stops, airline, take-off time, landing time)  @shivam add # of stops
 ❌ Browse questions and answers  
 ❌ Search questions and answers by keywords  
 ❌ Make flight reservations/buy the ticket  
