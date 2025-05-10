@@ -1,5 +1,9 @@
-/CustRep.class
 /Admin.class
+/CustRep.class
+/Customer.class
+/Login.class
+/Logout.class
 /MySQL.class
-/Registration.class
+/SalesReportServlet.class
 /SearchFlightsServlet.class
+/User.class

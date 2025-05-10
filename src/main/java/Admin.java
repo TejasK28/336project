@@ -1,4 +1,3 @@
-
 import jakarta.servlet.annotation.MultipartConfig; 
 
 import jakarta.servlet.RequestDispatcher;
@@ -19,13 +18,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 
 
 /**
  * Servlet implementation class Admin
  */
 @WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee", "/EditEmployee",
-             "/EditCustomer", "/DeleteCustomer", "/SalesReport"})
+             "/EditCustomer", "/DeleteCustomer"})
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
