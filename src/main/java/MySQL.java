@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -669,6 +670,96 @@ public class MySQL {
 		                      Date.valueOf(departDate),
 		                      Date.valueOf(departDate));
 		}
+	
+	
+	
+	/**
+     * Execute an INSERT/UPDATE/DELETE, binding any params, and return
+     * the number of rows affected.
+     */
+    public int executeUpdate(String sql, Object... params) {
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            // bind parameters
+            for (int i = 0; i < params.length; i++) {
+                Object p = params[i];
+                // if it’s a LocalDateTime, convert to Timestamp
+                if (p instanceof LocalDateTime) {
+                    ps.setTimestamp(i+1, Timestamp.valueOf((LocalDateTime)p));
+                } else {
+                    ps.setObject(i+1, p);
+                }
+            }
+            return ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+	
+	
+	/*
+	 * Method to add a new question
+	 */	
+	
+	// 1) Post a new question
+	public boolean addQuestion(String customerId, LocalDateTime when, String message) {
+	  String sql = """
+	    INSERT INTO Question(CustomerID, SubmitDateTime, Message)
+	    VALUES (?, ?, ?)
+	  """;
+	  return executeUpdate(sql, customerId, when, message) > 0;
+	}
+
+	// 2) Browse all questions (with optional paging)
+	public List<Map<String,Object>> getAllQuestions() {
+	  String sql = """
+	    SELECT q.QuestionID, q.CustomerID, q.SubmitDateTime, q.Message,
+	           c.FirstName, c.LastName
+	      FROM Question q
+	      JOIN Customer c ON c.CustomerID = q.CustomerID
+	     ORDER BY q.SubmitDateTime DESC
+	  """;
+	  return executeQuery(sql);
+	}
+
+	// 3) Search questions by keyword
+	public List<Map<String,Object>> searchQuestions(String keyword) {
+	  String sql = """
+	    SELECT QuestionID, CustomerID, SubmitDateTime, Message
+	      FROM Question
+	     WHERE Message LIKE ?
+	     ORDER BY SubmitDateTime DESC
+	  """;
+	  return executeQuery(sql, "%" + keyword + "%");
+	}
+
+	// 4) Post an answer
+	public boolean addAnswer(int questionId, String employeeId, LocalDateTime when, String message) {
+	  String sql = """
+	    INSERT INTO Answer(QuestionID, EmployeeID, ResponseDateTime, Message)
+	    VALUES (?, ?, ?, ?)
+	  """;
+	  return executeUpdate(sql, questionId, employeeId, when, message) > 0;
+	}
+
+	// 5) Browse answers for a question
+	public List<Map<String,Object>> getAnswersForQuestion(int questionId) {
+	  String sql = """
+	    SELECT a.AnswerID, a.EmployeeID, a.ResponseDateTime, a.Message,
+	           e.FirstName, e.LastName
+	      FROM Answer a
+	      JOIN Employee e ON e.EmployeeID = a.EmployeeID
+	     WHERE a.QuestionID = ?
+	     ORDER BY a.ResponseDateTime
+	  """;
+	  return executeQuery(sql, questionId);
+	}
+
+	
+	
 
 
 	
