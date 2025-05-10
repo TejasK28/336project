@@ -25,10 +25,16 @@
   </ul>
 <% } %>
 
-<h3>Your Reply</h3>
-<form action="${pageContext.request.contextPath}/PostAnswer" method="post">
-  <input type="hidden" name="questionId" value="<%=q.get("QuestionID")%>"/>
-  <input type="hidden" name="employeeId"  value="${sessionScope.uname}"/>
-  <textarea name="message" rows="3" required></textarea><br/>
-  <button type="submit">Send Answer</button>
-</form>
+<c:if test="${sessionScope.accType == 'Employee'}">
+  <h3>Your Reply</h3>
+  <form action="${pageContext.request.contextPath}/PostAnswer" method="post">
+    <input type="hidden" name="questionId" 
+           value="${question.QuestionID}" />
+    <textarea name="message"
+              rows="3"
+              required
+              placeholder="Your answer…"></textarea><br/>
+    <button type="submit">Send Answer</button>
+  </form>
+</c:if>
+

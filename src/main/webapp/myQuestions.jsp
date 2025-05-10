@@ -25,25 +25,29 @@
   %>
     <table border="1" cellpadding="5">
       <tr><th>ID</th><th>When</th><th>Question</th><th>Answers</th></tr>
-      <%
-        for(Map<String,Object> q : qs) {
-          int qid = (int)q.get("QuestionID");
-          String msg = (String)q.get("Message");
-          Object ts  = q.get("SubmitDateTime");
-      %>
-      <tr>
-        <td><%= qid %></td>
-        <td><%= ts %></td>
-        <td><%= msg %></td>
-        <td>
-		  <a href="<%=request.getContextPath()%>/ViewQuestion?questionId=<%= qid %>">
-  View / Reply
-</a>
-
-		</td>
-
-      </tr>
-      <% } %>
+      
+ 
+ <% for (Map<String,Object> q : qs) {
+       int id = (Integer) q.get("QuestionID");
+       Object ts = q.get("SubmitDateTime");
+       String msg = (String) q.get("Message");
+%>
+  <tr>
+    <td><%= id %></td>
+    <td><%= ts %></td>
+    <td><%= msg %></td>
+    <td>
+      <a href="${pageContext.request.contextPath}/ViewQuestion?questionId=<%= id %>">
+        View / Reply
+      </a>
+    </td>
+  </tr>
+<% } %>
+         </tbody>     
+      
+      
+      
+      
     </table>
   <% } %>
 </body>

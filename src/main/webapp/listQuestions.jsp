@@ -28,11 +28,11 @@
       <tbody>
         <%
           for (Map<String,Object> q : qs) {
-            int    id    = (Integer)   q.get("QuestionID");
-            String fname = (String)    q.get("FirstName");
-            String lname = (String)    q.get("LastName");
-            Object ts    =             q.get("SubmitDateTime");
-            String msg   = (String)    q.get("Message");
+            int    id    = (Integer) q.get("QuestionID");
+            String fname = (String)  q.get("FirstName");
+            String lname = (String)  q.get("LastName");
+            Object ts    =           q.get("SubmitDateTime");
+            String msg   = (String)  q.get("Message");
         %>
         <tr>
           <td><%= id %></td>
@@ -40,9 +40,10 @@
           <td><%= ts %></td>
           <td><%= msg %></td>
           <td>
-            <a href="<%= request.getContextPath() %>/ViewQuestion?questionId=<%= id %>">
-              View / Answer
-            </a>
+            <a href="${pageContext.request.contextPath}/ViewQuestion?questionId=<%= id %>">
+  View / Answer
+</a>
+
           </td>
         </tr>
         <% } %>

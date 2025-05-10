@@ -52,9 +52,10 @@
             <td><%= ts %></td>
             <td><%= msg %></td>
             <td>
-              <a href="<%= request.getContextPath() %>/ViewQuestion?questionId=<%= id %>">
-                View / Answer
-              </a>
+              <a href="${pageContext.request.contextPath}/ViewQuestion?questionId=<%= q.get("QuestionID") %>">
+  View / Answer
+</a>
+
             </td>
           </tr>
           <% } %>

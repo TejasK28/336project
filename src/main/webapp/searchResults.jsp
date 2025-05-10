@@ -35,20 +35,31 @@
           </tr>
         </thead>
         <tbody>
-        <% for (Map<String,Object> q : qs) { %>
-          <tr>
-            <td><%= q.get("QuestionID") %></td>
-            <td><%= q.get("FirstName") %> <%= q.get("LastName") %></td>
-            <td><%= q.get("SubmitDateTime") %></td>
-            <td><%= q.get("Message") %></td>
-            <td>
-              <a href="${pageContext.request.contextPath}/ViewQuestion?questionId=<%= q.get("QuestionID") %>">
-				  View / Answer
-				</a>
-
-            </td>
-          </tr>
-        <% } %>
+        
+        <% for (Map<String,Object> q : qs) {
+       int id = (Integer) q.get("QuestionID");
+       String fname = (String) q.get("FirstName");
+       String lname = (String) q.get("LastName");
+       Object ts = q.get("SubmitDateTime");
+       String msg = (String) q.get("Message");
+%>
+  <tr>
+    <td><%= id %></td>
+    <td><%= fname %> <%= lname %></td>
+    <td><%= ts %></td>
+    <td><%= msg %></td>
+    <td>
+      <a href="${pageContext.request.contextPath}/ViewQuestion?questionId=<%= id %>">
+        View / Answer
+      </a>
+    </td>
+  </tr>
+<% } %>
+        
+        
+        
+        
+        
         </tbody>
       </table>
     </c:otherwise>
