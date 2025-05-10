@@ -7,6 +7,26 @@
 <head>
   <meta charset="UTF-8">
   <title>Search Flights</title>
+  <script>
+    // on page load and whenever tripType changes, toggle the return-date row
+    function toggleReturnDate() {
+      const tripType = document.getElementById('tripType').value;
+      const returnRow = document.getElementById('returnRow');
+      if (tripType === 'roundtrip') {
+        returnRow.style.display = 'block';
+      } else {
+        returnRow.style.display = 'none';
+        document.getElementById('returnDate').value = '';
+      }
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      // hide/show on initial load
+      toggleReturnDate();
+      // attach listener
+      document.getElementById('tripType')
+              .addEventListener('change', toggleReturnDate);
+    });
+  </script>
 </head>
 <body>
   <h1>Search Flights</h1>
@@ -62,8 +82,8 @@
       </select>
     </p>
 
-    <!-- RETURN DATE -->
-    <p>
+    <!-- RETURN DATE (hidden by default) -->
+    <p id="returnRow" style="display:none;">
       <label for="returnDate">Return Date:</label>
       <select id="returnDate" name="returnDate">
         <option value="">-- none --</option>

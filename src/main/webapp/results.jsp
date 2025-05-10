@@ -29,10 +29,7 @@
         <td><%= f.get("ArrivalTime") %></td>
         <td><%= f.get("duration") %></td>
         <td>$<%= f.get("price") %></td>
-        <td><%= f.get("AirlineName") %></td>
-		<td><%= f.get("isDirectTrip") %></td>
-		<td><%= f.get("isRoundTrip")  %></td>
-        
+        <td><%= f.get("AirlineName") %></td>        
       </tr>
     <% } %>
   </table>
