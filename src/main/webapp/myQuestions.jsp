@@ -36,9 +36,10 @@
         <td><%= ts %></td>
         <td><%= msg %></td>
         <td>
-		  <a href="<%=request.getContextPath()%>/ViewQuestion?id=<%= qid %>">
-		    View / Reply
-		  </a>
+		  <a href="<%=request.getContextPath()%>/ViewQuestion?questionId=<%= qid %>">
+  View / Reply
+</a>
+
 		</td>
 
       </tr>

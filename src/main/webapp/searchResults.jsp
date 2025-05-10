@@ -42,9 +42,10 @@
             <td><%= q.get("SubmitDateTime") %></td>
             <td><%= q.get("Message") %></td>
             <td>
-              <a href="${pageContext.request.contextPath}/ViewQuestion?id=<%=q.get("QuestionID")%>">
-                View / Answer
-              </a>
+              <a href="${pageContext.request.contextPath}/ViewQuestion?questionId=<%= q.get("QuestionID") %>">
+				  View / Answer
+				</a>
+
             </td>
           </tr>
         <% } %>

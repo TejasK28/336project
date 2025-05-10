@@ -29,13 +29,17 @@ public class ViewQuestionServlet extends HttpServlet {
 	 */
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
     	      throws ServletException, IOException {
-    	    int qid = Integer.parseInt(req.getParameter("id"));
-    	    MySQL db = new MySQL();
-    	    Map<String,Object> question = db.getQuestionById(qid);
-    	    List<Map<String,Object>> answers = db.getAnswersForQuestion(qid);
+    	    String idParam = req.getParameter("questionId");
+    	    if (idParam == null) {
+    	      resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing questionId");
+    	      return;
+    	    }
+    	    int qid = Integer.parseInt(idParam);
+    	    Map<String, Object> question = new MySQL().getQuestionById(qid);
+    	    List<Map<String,Object>> answers = new MySQL().getAnswersForQuestion(qid);
     	    req.setAttribute("question", question);
     	    req.setAttribute("answers", answers);
-    	    req.getRequestDispatcher("viewQuestion.jsp")
+    	    req.getRequestDispatcher("/viewQuestion.jsp")
     	       .forward(req, resp);
     	  }
 

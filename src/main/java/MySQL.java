@@ -725,16 +725,22 @@ public class MySQL {
 	  return executeQuery(sql);
 	}
 
-	// 3) Search questions by keyword
 	public List<Map<String,Object>> searchQuestions(String keyword) {
-	  String sql = """
-	    SELECT QuestionID, CustomerID, SubmitDateTime, Message
-	      FROM Question
-	     WHERE Message LIKE ?
-	     ORDER BY SubmitDateTime DESC
-	  """;
-	  return executeQuery(sql, "%" + keyword + "%");
-	}
+		  String sql = """
+		    SELECT q.QuestionID,
+		           q.CustomerID,
+		           q.SubmitDateTime,
+		           q.Message,
+		           c.FirstName,
+		           c.LastName
+		      FROM Question q
+		      JOIN Customer c ON c.CustomerID = q.CustomerID
+		     WHERE q.Message LIKE ?
+		     ORDER BY q.SubmitDateTime DESC
+		  """;
+		  return executeQuery(sql, "%" + keyword + "%");
+		}
+
 
 	// 4) Post an answer
 	public boolean addAnswer(int questionId, String employeeId, LocalDateTime when, String message) {
@@ -781,6 +787,8 @@ public class MySQL {
 	    """;
 	    return executeQuery(sql, customerId);
 	}
+	
+	
 
 
 
