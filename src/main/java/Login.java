@@ -5,7 +5,11 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Servlet implementation class Login
@@ -39,6 +43,38 @@ public class Login extends HttpServlet {
 			RequestDispatcher dispatcher = request.getRequestDispatcher("CustomerRepLogin.jsp");
 			dispatcher.forward(request, response);
 		} else if ("/Home".equals(request.getServletPath())) {
+			MySQL db = new MySQL();
+			
+			@SuppressWarnings("unchecked")
+			List<String> plan = (List<String>) request.getSession()
+			                                         .getAttribute("CustFlightPlan");
+
+			if (plan == null || plan.isEmpty()) {
+			    // nothing to query
+			    request.setAttribute("flightPlanResults", Collections.emptyList());
+			}
+			else {
+			    // 2) Build a placeholders string like "?, ?, ?, …"
+			    String placeholders = plan.stream()
+			                              .map(id -> "?")
+			                              .collect(Collectors.joining(", "));
+			    
+			    // 3) Build the SQL
+			    String sql = "SELECT * FROM Flight WHERE FlightID IN (" + placeholders + ")";
+			    
+			    // 4) Execute using your helper’s varargs interface
+			    //    (It will bind each plan.get(i) to the i+1’th “?”.)
+			    List<Map<String,Object>> flights = db.executeQuery(
+			        sql,
+			        plan.toArray(new String[0])
+			    );
+			    
+			    request.setAttribute("flightPlanResults", flights);
+			}
+			
+			
+			
+			
 			RequestDispatcher dispatcher = request.getRequestDispatcher("Home.jsp");
 			dispatcher.forward(request, response);
 		} else if ("/CreateCustomer".equals(request.getServletPath())) {
@@ -89,6 +125,7 @@ public class Login extends HttpServlet {
 
 					response.sendRedirect(request.getContextPath() + "/Admin");
 				} else if ("Customer".equals(accType)) {
+					request.getSession().setAttribute("CustFlightPlan", new ArrayList<>());
 					response.sendRedirect(request.getContextPath() + "/Home");
 				} else if ("CustRep".equals(accType)) {
 					System.out.println("custrepaldskjfasldjf: " + employee.get("isCustomerRepresentative"));
