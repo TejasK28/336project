@@ -168,59 +168,59 @@
 				method="POST" style="margin-bottom: 20px;">
 				<label for="reportMonthYear_jsp">Select Month (YYYY-MM):</label>
 				<%
-                    String reportMonthYearValue = ""; 
-                    Object reportForMonthYearInputAttr = request.getAttribute("reportForMonthYearInput");
-                    if (reportForMonthYearInputAttr != null) {
-                        reportMonthYearValue = (String) reportForMonthYearInputAttr;
-                    }
-                %>
+				String reportMonthYearValue = "";
+				Object reportForMonthYearInputAttr = request.getAttribute("reportForMonthYearInput");
+				if (reportForMonthYearInputAttr != null) {
+					reportMonthYearValue = (String) reportForMonthYearInputAttr;
+				}
+				%>
 				<input type="month" id="reportMonthYear_jsp" name="reportMonthYear"
-					required value="<%= reportMonthYearValue %>"
+					required value="<%=reportMonthYearValue%>"
 					style="padding: 5px; margin-right: 10px;"> <input
 					type="submit" value="Generate Report" class="btn-green"
 					style="padding: 6px 12px;">
 			</form>
 
 			<%
-				// Variables for Sales Report
-				String displayMonthYear = reportMonthYearValue; 
-				String totalFareStr = "N/A";
-				String totalBookingFeeStr = "N/A";
-				String totalRevenueStr = "N/A";
-				long numberOfTickets = 0;
-				NumberFormat salesCurrencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
+			// Variables for Sales Report
+			String displayMonthYear = reportMonthYearValue;
+			String totalFareStr = "N/A";
+			String totalBookingFeeStr = "N/A";
+			String totalRevenueStr = "N/A";
+			long numberOfTickets = 0;
+			NumberFormat salesCurrencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
 
-				Boolean salesReportGenerated = (Boolean) request.getAttribute("reportGenerated"); // Renamed to avoid conflict
-				String salesReportError = (String) request.getAttribute("reportError"); // Renamed
-				Map<String, Object> salesData = null;
-				Object salesDataAttr = request.getAttribute("salesData");
-				if (salesDataAttr instanceof Map) {
-					 salesData = (Map<String, Object>) salesDataAttr;
+			Boolean salesReportGenerated = (Boolean) request.getAttribute("reportGenerated"); // Renamed to avoid conflict
+			String salesReportError = (String) request.getAttribute("reportError"); // Renamed
+			Map<String, Object> salesData = null;
+			Object salesDataAttr = request.getAttribute("salesData");
+			if (salesDataAttr instanceof Map) {
+				salesData = (Map<String, Object>) salesDataAttr;
+			}
+
+			if (salesReportError != null && !salesReportError.isEmpty()) {
+			%>
+			<p style="color: red; font-weight: bold;"><%=salesReportError%></p>
+			<%
+			} // Closes: if (salesReportError != null && !salesReportError.isEmpty())
+
+			if (Boolean.TRUE.equals(salesReportGenerated)) {
+			if (salesData != null) {
+				// displayMonthYear is already initialized from reportMonthYearValue
+				Object rawNumberOfTickets = salesData.get("numberOfTickets");
+				if (rawNumberOfTickets instanceof Number) {
+					numberOfTickets = ((Number) rawNumberOfTickets).longValue();
 				}
 
-				if (salesReportError != null && !salesReportError.isEmpty()) {
-			%>
-			<p style="color: red; font-weight: bold;"><%= salesReportError %></p>
-			<%
-				} // Closes: if (salesReportError != null && !salesReportError.isEmpty())
+				totalFareStr = JspFormatHelper.formatCurrencyValue(salesData.get("totalFare"), salesCurrencyFormatter);
+				totalBookingFeeStr = JspFormatHelper.formatCurrencyValue(salesData.get("totalBookingFee"), salesCurrencyFormatter);
+				totalRevenueStr = JspFormatHelper.formatCurrencyValue(salesData.get("totalRevenue"), salesCurrencyFormatter);
 
-				if (Boolean.TRUE.equals(salesReportGenerated)) {
-					if (salesData != null) {
-						// displayMonthYear is already initialized from reportMonthYearValue
-						Object rawNumberOfTickets = salesData.get("numberOfTickets");
-						if (rawNumberOfTickets instanceof Number) {
-							numberOfTickets = ((Number) rawNumberOfTickets).longValue();
-						}
-						
-						totalFareStr = JspFormatHelper.formatCurrencyValue(salesData.get("totalFare"), salesCurrencyFormatter);
-						totalBookingFeeStr = JspFormatHelper.formatCurrencyValue(salesData.get("totalBookingFee"), salesCurrencyFormatter);
-						totalRevenueStr = JspFormatHelper.formatCurrencyValue(salesData.get("totalRevenue"), salesCurrencyFormatter);
-
-						if (numberOfTickets > 0) {
+				if (numberOfTickets > 0) {
 			%>
 			<h4 style="margin-bottom: 10px;">
 				Sales Report for
-				<%= (displayMonthYear != null && !displayMonthYear.isEmpty() ? displayMonthYear : "Selected Period") %></h4>
+				<%=(displayMonthYear != null && !displayMonthYear.isEmpty() ? displayMonthYear : "Selected Period")%></h4>
 			<table border="1" cellpadding="8" cellspacing="0"
 				style="width: auto; min-width: 350px; border-collapse: collapse;">
 				<thead style="background-color: #f0f0f0;">
@@ -232,46 +232,47 @@
 				<tbody>
 					<tr>
 						<td style="padding: 8px;">Number of Tickets Sold</td>
-						<td style="padding: 8px;"><%= numberOfTickets %></td>
+						<td style="padding: 8px;"><%=numberOfTickets%></td>
 					</tr>
 					<tr>
 						<td style="padding: 8px;">Total Fare Collected</td>
-						<td style="padding: 8px;"><%= totalFareStr %></td>
+						<td style="padding: 8px;"><%=totalFareStr%></td>
 					</tr>
 					<tr>
 						<td style="padding: 8px;">Total Booking Fees</td>
-						<td style="padding: 8px;"><%= totalBookingFeeStr %></td>
+						<td style="padding: 8px;"><%=totalBookingFeeStr%></td>
 					</tr>
 					<tr>
 						<td style="padding: 8px;"><strong>Total Revenue</strong></td>
-						<td style="padding: 8px;"><strong><%= totalRevenueStr %></strong></td>
+						<td style="padding: 8px;"><strong><%=totalRevenueStr%></strong></td>
 					</tr>
 				</tbody>
 			</table>
 			<%
-					} else { // No tickets sold, but report was generated for the month
-						if (salesReportError == null || salesReportError.isEmpty()) { 
+			} else { // No tickets sold, but report was generated for the month
+			if (salesReportError == null || salesReportError.isEmpty()) {
 			%>
 			<h4 style="margin-bottom: 10px;">
 				Sales Report for
-				<%= (displayMonthYear != null && !displayMonthYear.isEmpty() ? displayMonthYear : "Selected Period") %></h4>
+				<%=(displayMonthYear != null && !displayMonthYear.isEmpty() ? displayMonthYear : "Selected Period")%></h4>
 			<p>
 				No sales data found for
-				<%= (displayMonthYear != null && !displayMonthYear.isEmpty() ? displayMonthYear : "the selected period") %>.
+				<%=(displayMonthYear != null && !displayMonthYear.isEmpty() ? displayMonthYear : "the selected period")%>.
 			</p>
 			<%
-						}
-					} // End if (numberOfTickets > 0)
-				} else { // salesData is null but report was generated (and no specific error already shown)
-					 if (salesReportError == null || salesReportError.isEmpty()) {
+			}
+			} // End if (numberOfTickets > 0)
+			} else { // salesData is null but report was generated (and no specific error already shown)
+			if (salesReportError == null || salesReportError.isEmpty()) {
 			%>
 			<p>
 				Report data could not be retrieved or is empty for
-				<%= (reportMonthYearValue != null && !reportMonthYearValue.isEmpty() ? reportMonthYearValue : "the selected period") %>.
+				<%=(reportMonthYearValue != null && !reportMonthYearValue.isEmpty() ? reportMonthYearValue
+		: "the selected period")%>.
 			</p>
 			<%
-					}
-				} // End if (salesData != null)
+			}
+			} // End if (salesData != null)
 			} // End if (Boolean.TRUE.equals(salesReportGenerated))
 			%>
 		</div>
@@ -287,60 +288,60 @@
 					By:</label> <select name="searchBy" id="searchBy_jsp"
 					style="padding: 5px; margin-right: 10px;">
 					<%
-                        String currentSearchBy = (String) request.getAttribute("searchByInput");
-                        if (currentSearchBy == null && request.getParameter("searchBy") != null) { 
-                            currentSearchBy = request.getParameter("searchBy");
-                        }
-                    %>
+					String currentSearchBy = (String) request.getAttribute("searchByInput");
+					if (currentSearchBy == null && request.getParameter("searchBy") != null) {
+						currentSearchBy = request.getParameter("searchBy");
+					}
+					%>
 					<option value="flightNumber"
-						<%= "flightNumber".equals(currentSearchBy) ? "selected" : "" %>>Flight
+						<%="flightNumber".equals(currentSearchBy) ? "selected" : ""%>>Flight
 						Number</option>
 					<option value="customerName"
-						<%= "customerName".equals(currentSearchBy) ? "selected" : "" %>>Customer
+						<%="customerName".equals(currentSearchBy) ? "selected" : ""%>>Customer
 						Name</option>
 					<option value="customerID"
-						<%= "customerID".equals(currentSearchBy) ? "selected" : "" %>>Customer
+						<%="customerID".equals(currentSearchBy) ? "selected" : ""%>>Customer
 						ID</option>
 				</select> <label for="searchValue_jsp" style="margin-right: 5px;">Search
 					Value:</label>
 				<%
-                    String currentSearchValue = (String) request.getAttribute("searchValueInput");
-                    if (currentSearchValue == null && request.getParameter("searchValue") != null) { 
-                         currentSearchValue = request.getParameter("searchValue");
-                    }
-                %>
+				String currentSearchValue = (String) request.getAttribute("searchValueInput");
+				if (currentSearchValue == null && request.getParameter("searchValue") != null) {
+					currentSearchValue = request.getParameter("searchValue");
+				}
+				%>
 				<input type="text" id="searchValue_jsp" name="searchValue" required
-					value='<%= currentSearchValue != null ? currentSearchValue : "" %>'
+					value='<%=currentSearchValue != null ? currentSearchValue : ""%>'
 					style="padding: 5px; margin-right: 10px; width: 200px;"> <input
 					type="submit" value="Get Reservations" class="btn-green"
 					style="padding: 6px 12px;">
 			</form>
 
 			<%
-                Boolean reservationReportGenerated = (Boolean) request.getAttribute("reservationReportGenerated");
-                String reservationReportError = (String) request.getAttribute("reservationReportError");
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> reservationsList = (List<Map<String, Object>>) request.getAttribute("reservationsList");
-                String reservationReportTitle = (String) request.getAttribute("reservationReportTitle");
+			Boolean reservationReportGenerated = (Boolean) request.getAttribute("reservationReportGenerated");
+			String reservationReportError = (String) request.getAttribute("reservationReportError");
+			@SuppressWarnings("unchecked")
+			List<Map<String, Object>> reservationsList = (List<Map<String, Object>>) request.getAttribute("reservationsList");
+			String reservationReportTitle = (String) request.getAttribute("reservationReportTitle");
 
-                NumberFormat reservationCurrencyFormatter = NumberFormat.getCurrencyInstance(Locale.US); 
-                java.text.SimpleDateFormat dateTimeFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			NumberFormat reservationCurrencyFormatter = NumberFormat.getCurrencyInstance(Locale.US);
+			java.text.SimpleDateFormat dateTimeFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-                if (reservationReportError != null && !reservationReportError.isEmpty()) {
-            %>
-			<p style="color: red; font-weight: bold;"><%= reservationReportError %></p>
+			if (reservationReportError != null && !reservationReportError.isEmpty()) {
+			%>
+			<p style="color: red; font-weight: bold;"><%=reservationReportError%></p>
 			<%
-                } // End if reservationReportError
+			} // End if reservationReportError
 
-                if (Boolean.TRUE.equals(reservationReportGenerated)) {
-                	if (reservationReportTitle == null || reservationReportTitle.isEmpty()) { 
-                        reservationReportTitle = "Reservation Search Results"; 
-                    }
-            %>
-			<h4 style="margin-bottom: 10px;"><%= reservationReportTitle %></h4>
+			if (Boolean.TRUE.equals(reservationReportGenerated)) {
+			if (reservationReportTitle == null || reservationReportTitle.isEmpty()) {
+				reservationReportTitle = "Reservation Search Results";
+			}
+			%>
+			<h4 style="margin-bottom: 10px;"><%=reservationReportTitle%></h4>
 			<%
-                    if (reservationsList != null && !reservationsList.isEmpty()) {
-            %>
+			if (reservationsList != null && !reservationsList.isEmpty()) {
+			%>
 			<table border="1" cellpadding="8" cellspacing="0"
 				style="width: 100%; border-collapse: collapse; margin-top: 10px;">
 				<thead style="background-color: #e9ecef;">
@@ -357,65 +358,70 @@
 					</tr>
 				</thead>
 				<tbody>
-					<% for (Map<String, Object> res : reservationsList) { %>
+					<%
+					for (Map<String, Object> res : reservationsList) {
+					%>
 					<tr>
-						<td><%= res.get("TicketID") %></td>
-						<td><%= res.get("CustomerFirstName") %> <%= res.get("CustomerLastName") %><br />
-							(<%= res.get("CustomerID") %>)</td>
-						<td>Flt #: <%= res.get("FlightNumber") %> (ID: <%= res.get("FlightID") %>)<br />
-							<%= res.get("FromAirportID") %> &rarr; <%= res.get("ToAirportID") %>
+						<td><%=res.get("TicketID")%></td>
+						<td><%=res.get("CustomerFirstName")%> <%=res.get("CustomerLastName")%><br />
+							(<%=res.get("CustomerID")%>)</td>
+						<td>Flt #: <%=res.get("FlightNumber")%> (ID: <%=res.get("FlightID")%>)<br />
+							<%=res.get("FromAirportID")%> &rarr; <%=res.get("ToAirportID")%>
 						</td>
-						<td><%= res.get("AirlineName") != null ? res.get("AirlineName") : "N/A" %></td>
+						<td><%=res.get("AirlineName") != null ? res.get("AirlineName") : "N/A"%></td>
 						<td>
 							<%
-                                        Object departTimeObj = res.get("DepartTime");
-                                        String formattedDepartTime = "N/A";
-                                        if (departTimeObj instanceof Timestamp) { 
-                                            formattedDepartTime = dateTimeFormatter.format(new Date(((Timestamp)departTimeObj).getTime()));
-                                        } else if (departTimeObj != null) {
-                                            formattedDepartTime = departTimeObj.toString();
-                                        }
-                                        %> <%= formattedDepartTime %>
+							Object departTimeObj = res.get("DepartTime");
+							String formattedDepartTime = "N/A";
+							if (departTimeObj instanceof Timestamp) {
+								formattedDepartTime = dateTimeFormatter.format(new Date(((Timestamp) departTimeObj).getTime()));
+							} else if (departTimeObj != null) {
+								formattedDepartTime = departTimeObj.toString();
+							}
+							%> <%=formattedDepartTime%>
 						</td>
 						<td>
 							<%
-                                        Object arrivalTimeObj = res.get("ArrivalTime");
-                                        String formattedArrivalTime = "N/A";
-                                        if (arrivalTimeObj instanceof Timestamp) { 
-                                            formattedArrivalTime = dateTimeFormatter.format(new Date(((Timestamp)arrivalTimeObj).getTime()));
-                                        } else if (arrivalTimeObj != null) {
-                                            formattedArrivalTime = arrivalTimeObj.toString();
-                                        }
-                                        %> <%= formattedArrivalTime %>
+							Object arrivalTimeObj = res.get("ArrivalTime");
+							String formattedArrivalTime = "N/A";
+							if (arrivalTimeObj instanceof Timestamp) {
+								formattedArrivalTime = dateTimeFormatter.format(new Date(((Timestamp) arrivalTimeObj).getTime()));
+							} else if (arrivalTimeObj != null) {
+								formattedArrivalTime = arrivalTimeObj.toString();
+							}
+							%> <%=formattedArrivalTime%>
 						</td>
-						<td><%= JspFormatHelper.formatCurrencyValue(res.get("TicketFare"), reservationCurrencyFormatter) %></td>
-						<td><%= JspFormatHelper.formatCurrencyValue(res.get("BookingFee"), reservationCurrencyFormatter) %></td>
+						<td><%=JspFormatHelper.formatCurrencyValue(res.get("TicketFare"), reservationCurrencyFormatter)%></td>
+						<td><%=JspFormatHelper.formatCurrencyValue(res.get("BookingFee"), reservationCurrencyFormatter)%></td>
 						<td>
 							<%
-                                        Object purchaseTimeObj = res.get("PurchaseDateTime");
-                                        String formattedPurchaseTime = "N/A";
-                                        if (purchaseTimeObj instanceof Timestamp) { 
-                                            formattedPurchaseTime = dateTimeFormatter.format(new Date(((Timestamp)purchaseTimeObj).getTime()));
-                                        } else if (purchaseTimeObj != null) {
-                                            formattedPurchaseTime = purchaseTimeObj.toString();
-                                        }
-                                        %> <%= formattedPurchaseTime %>
+							Object purchaseTimeObj = res.get("PurchaseDateTime");
+							String formattedPurchaseTime = "N/A";
+							if (purchaseTimeObj instanceof Timestamp) {
+								formattedPurchaseTime = dateTimeFormatter.format(new Date(((Timestamp) purchaseTimeObj).getTime()));
+							} else if (purchaseTimeObj != null) {
+								formattedPurchaseTime = purchaseTimeObj.toString();
+							}
+							%> <%=formattedPurchaseTime%>
 						</td>
 					</tr>
-					<% } // End for reservationsList %>
+					<%
+					} // End for reservationsList
+					%>
 				</tbody>
 			</table>
 			<%
-                    } else { // reservationsList is null or empty
-                        if ((reservationReportError == null || reservationReportError.isEmpty()) && (currentSearchValue != null && !currentSearchValue.isEmpty())) {
-                            // Only show "No data" if a search was performed and no other error was displayed
-            %>
+			} else { // reservationsList is null or empty
+			if ((reservationReportError == null || reservationReportError.isEmpty())
+					&& (currentSearchValue != null && !currentSearchValue.isEmpty())) {
+				// Only show "No data" if a search was performed and no other error was displayed
+			%>
 			<p>No reservation data found for the specified criteria.</p>
 			<%
-                        }
-                    } // End if reservationsList not empty
-                } // End if reservationReportGenerated
-            %>
+			}
+			} // End if reservationsList not empty
+			} // End if reservationReportGenerated
+			%>
 		</div>
 
 		<hr style="margin: 30px 0;" />
@@ -431,30 +437,30 @@
 			</form>
 
 			<%
-                Boolean topCustomerReportGenerated = (Boolean) request.getAttribute("topCustomerReportGenerated");
-                if (Boolean.TRUE.equals(topCustomerReportGenerated)) {
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> topCustomerData = (Map<String, Object>) request.getAttribute("topCustomerData");
-                    NumberFormat statsCurrencyFormatter = NumberFormat.getCurrencyInstance(Locale.US); // Local instance
+			Boolean topCustomerReportGenerated = (Boolean) request.getAttribute("topCustomerReportGenerated");
+			if (Boolean.TRUE.equals(topCustomerReportGenerated)) {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> topCustomerData = (Map<String, Object>) request.getAttribute("topCustomerData");
+				NumberFormat statsCurrencyFormatter = NumberFormat.getCurrencyInstance(Locale.US); // Local instance
 
-                    if (topCustomerData != null && !topCustomerData.isEmpty()) {
-            %>
+				if (topCustomerData != null && !topCustomerData.isEmpty()) {
+			%>
 			<p>
 				<strong>Customer ID:</strong>
-				<%= topCustomerData.get("CustomerID") %><br /> <strong>Name:</strong>
-				<%= topCustomerData.get("FirstName") %>
-				<%= topCustomerData.get("LastName") %><br /> <strong>Total
+				<%=topCustomerData.get("CustomerID")%><br /> <strong>Name:</strong>
+				<%=topCustomerData.get("FirstName")%>
+				<%=topCustomerData.get("LastName")%><br /> <strong>Total
 					Revenue Generated:</strong>
-				<%= JspFormatHelper.formatCurrencyValue(topCustomerData.get("TotalRevenue"), statsCurrencyFormatter) %>
+				<%=JspFormatHelper.formatCurrencyValue(topCustomerData.get("TotalRevenue"), statsCurrencyFormatter)%>
 			</p>
 			<%
-                    } else {
-            %>
+			} else {
+			%>
 			<p>No customer revenue data found or no tickets sold.</p>
 			<%
-                    }
-                }
-            %>
+			}
+			}
+			%>
 		</div>
 
 		<hr style="margin: 30px 0;" />
@@ -470,13 +476,13 @@
 			</form>
 
 			<%
-                Boolean activeFlightsReportGenerated = (Boolean) request.getAttribute("activeFlightsReportGenerated");
-                if (Boolean.TRUE.equals(activeFlightsReportGenerated)) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> activeFlightsData = (List<Map<String, Object>>) request.getAttribute("activeFlightsData");
+			Boolean activeFlightsReportGenerated = (Boolean) request.getAttribute("activeFlightsReportGenerated");
+			if (Boolean.TRUE.equals(activeFlightsReportGenerated)) {
+				@SuppressWarnings("unchecked")
+				List<Map<String, Object>> activeFlightsData = (List<Map<String, Object>>) request.getAttribute("activeFlightsData");
 
-                    if (activeFlightsData != null && !activeFlightsData.isEmpty()) {
-            %>
+				if (activeFlightsData != null && !activeFlightsData.isEmpty()) {
+			%>
 			<table border="1" cellpadding="8" cellspacing="0"
 				style="width: auto; min-width: 500px; border-collapse: collapse; margin-top: 10px;">
 				<thead style="background-color: #e9ecef;">
@@ -489,25 +495,94 @@
 					</tr>
 				</thead>
 				<tbody>
-					<% for (Map<String, Object> flight : activeFlightsData) { %>
+					<%
+					for (Map<String, Object> flight : activeFlightsData) {
+					%>
 					<tr>
-						<td><%= flight.get("FlightID") %></td>
-						<td><%= flight.get("FlightNumber") %></td>
-						<td><%= flight.get("FromAirportID") %> &rarr; <%= flight.get("ToAirportID") %></td>
-						<td><%= flight.get("AirlineName") %></td>
-						<td><%= flight.get("TicketCount") %></td>
+						<td><%=flight.get("FlightID")%></td>
+						<td><%=flight.get("FlightNumber")%></td>
+						<td><%=flight.get("FromAirportID")%> &rarr; <%=flight.get("ToAirportID")%></td>
+						<td><%=flight.get("AirlineName")%></td>
+						<td><%=flight.get("TicketCount")%></td>
 					</tr>
-					<% } %>
+					<%
+					}
+					%>
 				</tbody>
 			</table>
 			<%
-                    } else {
-            %>
+			} else {
+			%>
 			<p>No flight activity data found or no tickets sold.</p>
 			<%
-                    }
-                }
-            %>
+			}
+			}
+			%>
+		</div>
+
+		<hr style="margin: 30px 0;" />
+
+		<%-- New Section: Revenue by Entity Report --%>
+		<div class="report-section"
+			style="margin-bottom: 30px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9;">
+			<h3 style="margin-top: 0;">Revenue by Entity</h3>
+			<form action="<%=request.getContextPath()%>/RevenueReportServlet"
+				method="POST" style="margin-bottom: 20px;">
+				<label for="revenueReportType_jsp" style="margin-right: 5px;">Report
+					For:</label> <select name="revenueReportType" id="revenueReportType_jsp"
+					style="padding: 5px; margin-right: 10px;">
+					<%
+					String currentRevReportType = (String) request.getAttribute("revenueReportTypeInput");
+					%>
+					<option value="flight"
+						<%="flight".equals(currentRevReportType) ? "selected" : ""%>>Flight
+						(by ID)</option>
+					<option value="airline"
+						<%="airline".equals(currentRevReportType) ? "selected" : ""%>>Airline
+						(by ID)</option>
+					<option value="customer"
+						<%="customer".equals(currentRevReportType) ? "selected" : ""%>>Customer
+						(by ID)</option>
+				</select> <label for="revenueIdentifier_jsp" style="margin-right: 5px;">Enter
+					ID:</label> <input type="text" id="revenueIdentifier_jsp"
+					name="revenueIdentifier" required
+					value='<%=request.getAttribute("revenueIdentifierInput") != null ? (String) request.getAttribute("revenueIdentifierInput")
+				: ""%>'
+					style="padding: 5px; margin-right: 10px; width: 150px;"> <input
+					type="submit" value="Get Revenue" class="btn-green"
+					style="padding: 6px 12px;">
+			</form>
+
+			<%
+			Boolean revenueByEntityReportGenerated = (Boolean) request.getAttribute("revenueByEntityReportGenerated");
+			if (Boolean.TRUE.equals(revenueByEntityReportGenerated)) {
+				String revenueReportErrorMsg = (String) request.getAttribute("revenueReportErrorMsg");
+				BigDecimal totalRevenueForEntity = (BigDecimal) request.getAttribute("totalRevenueForEntity");
+				String revenueReportTitleStr = (String) request.getAttribute("revenueReportTitle"); // Renamed to avoid conflict
+				boolean revenueDataFound = Boolean.TRUE.equals(request.getAttribute("revenueReportDataFound"));
+
+				NumberFormat entityRevenueFormatter = NumberFormat.getCurrencyInstance(Locale.US);
+
+				if (revenueReportErrorMsg != null && !revenueReportErrorMsg.isEmpty()) {
+			%>
+			<p style="color: red; font-weight: bold;"><%=revenueReportErrorMsg%></p>
+			<%
+			} else if (revenueDataFound) {
+			%>
+			<h4 style="margin-bottom: 10px;"><%=revenueReportTitleStr != null ? revenueReportTitleStr : "Revenue Report"%></h4>
+			<p>
+				<strong>Total Revenue:</strong>
+				<%=JspFormatHelper.formatCurrencyValue(totalRevenueForEntity, entityRevenueFormatter)%></p>
+			<%
+			} else if (!revenueDataFound && request.getParameter("revenueIdentifier") != null) { // Attempted search but no data
+			%>
+			<h4 style="margin-bottom: 10px;"><%=revenueReportTitleStr != null ? revenueReportTitleStr : "Revenue Report"%></h4>
+			<p>No revenue data found for the specified identifier, or revenue
+				is $0.00.</p>
+			<%
+			}
+			}
+			%>
 		</div>
 
 		<h1>Create New Employee</h1>
@@ -556,27 +631,25 @@
 	</main>
 	<%-- 	<script src="<%= request.getContextPath() %>/js/adminPortal.js"></script> --%>
 
-	<%!
-        // JSP Declaration: Makes JspFormatHelper a static inner class of the generated servlet
-        // so its static methods are accessible from anywhere in the JSP
-        static class JspFormatHelper { 
-            static String formatCurrencyValue(Object value, NumberFormat formatter) {
-                if (value == null) {
-                    return formatter.format(0.0); 
-                }
-                if (value instanceof BigDecimal) {
-                    return formatter.format(value);
-                } else if (value instanceof Number) { 
-                     return formatter.format(((Number)value).doubleValue());
-                }
-                try { 
-                    return formatter.format(Double.parseDouble(value.toString()));
-                } catch (NumberFormatException e) {
-                    System.err.println("JspFormatHelper: Could not parse to double: " + value);
-                    return "N/A"; 
-                }
-            }
-        }
-    %>
+	<%!// JSP Declaration: Makes JspFormatHelper a static inner class of the generated servlet
+	// so its static methods are accessible from anywhere in the JSP
+	static class JspFormatHelper {
+		static String formatCurrencyValue(Object value, NumberFormat formatter) {
+			if (value == null) {
+				return formatter.format(0.0);
+			}
+			if (value instanceof BigDecimal) {
+				return formatter.format(value);
+			} else if (value instanceof Number) {
+				return formatter.format(((Number) value).doubleValue());
+			}
+			try {
+				return formatter.format(Double.parseDouble(value.toString()));
+			} catch (NumberFormatException e) {
+				System.err.println("JspFormatHelper: Could not parse to double: " + value);
+				return "N/A";
+			}
+		}
+	}%>
 </body>
 </html>

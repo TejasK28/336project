@@ -6,6 +6,7 @@
 /Logout.class
 /MySQL.class
 /ReservationReportServlet.class
+/RevenueReportServlet.class
 /SalesReportServlet.class
 /SearchFlightsServlet.class
 /User.class
