@@ -217,7 +217,8 @@ public class CustRep extends HttpServlet {
 
 			if (!db.addAircraft(airlineId, model, total, configStr)) {
 				request.setAttribute("createAircraftError", "Database error!");
-				request.getRequestDispatcher("/CustRep").forward(request, response);
+				response.sendRedirect(request.getContextPath() + "/CustRep");
+//				request.getRequestDispatcher("/CustRep").forward(request, response);
 				return;
 			}
 
