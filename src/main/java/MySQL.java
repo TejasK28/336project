@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -20,8 +21,8 @@ public class MySQL {
 
 	private String dburl = "jdbc:mysql://localhost:3306/project";
 	private String dbuname = "root";
-	private String dbpassword = "rootrootroot"; // TODO REPLACE THIS WITH YOUR PASSWORD
-	private String dbdriver = "com.mysql.jdbc.Driver";
+	private String dbpassword = "password";
+	private String dbdriver = "com.mysql.cj.jdbc.Driver";
 
 	/*
 	 * Helper method to load the Driver package so it can communicate with the
@@ -389,11 +390,15 @@ public class MySQL {
 	}
 
 	public List<Map<String, Object>> getAllAirlines() {
-//		String sql = "SELECT * FROM Airline";
-		String sql = "SELECT a.Name, " + "a.AirlineID,"
-				+ "(SELECT COUNT(*) FROM Aircraft WHERE AirlineID = a.AirlineID) AS numOwnedAircrafts, "
-				+ "(SELECT COUNT(*) FROM Flight   WHERE AirlineID = a.AirlineID) AS numSchedFlights "
-				+ "FROM Airline a " + "ORDER BY a.Name;";
+		//		String sql = "SELECT * FROM Airline";
+		String sql =
+				"SELECT a.Name, " +
+						"a.AirlineID," + 
+						"(SELECT COUNT(*) FROM Aircraft WHERE AirlineID = a.AirlineID) AS numOwnedAircrafts, " +
+						"(SELECT COUNT(*) FROM Flight   WHERE AirlineID = a.AirlineID) AS numSchedFlights " +
+						"FROM Airline a " +
+						"ORDER BY a.Name;";
+
 
 		return executeQuery(sql);
 	}
@@ -487,12 +492,12 @@ public class MySQL {
 
 	public boolean deleteAirport(String airportID) {
 		String sql = "DELETE FROM Airport WHERE AirportID = ?";
-		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection con = getConnection();
+				PreparedStatement ps = con.prepareStatement(sql)) {
 
 			ps.setString(1, airportID);
 			int rowsDeleted = ps.executeUpdate();
 			return rowsDeleted > 0;
-
 		} catch (SQLException e) {
 			// You might use a logger instead of printStackTrace in real code
 			e.printStackTrace();
@@ -502,8 +507,12 @@ public class MySQL {
 	}
 
 	public boolean updateAirport(String airportID, String name, String city, String country, String originalAID) {
-		String sql = "UPDATE Airport " + "SET AirportID = ?, " + "    City      = ?, " + "    Country   = ?, "
-				+ "    Name      = ?  " + "WHERE AirportID = ?";
+		String sql = "UPDATE Airport " +
+				"SET AirportID = ?, " +
+				"    City      = ?, " +
+				"    Country   = ?, " +
+				"    Name      = ?  " +
+				"WHERE AirportID = ?";
 		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
 			ps.setString(1, airportID);
@@ -514,11 +523,13 @@ public class MySQL {
 
 			int rows = ps.executeUpdate();
 			return rows > 0;
-		} catch (SQLIntegrityConstraintViolationException ex) {
+		} 
+		catch (SQLIntegrityConstraintViolationException ex) {
 			System.err.println("Duplicate AirportID: " + airportID);
 			return false;
 
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -535,7 +546,7 @@ public class MySQL {
 			ps.setInt(2, airlineId);
 			ps.setString(3, fromAirport);
 			ps.setString(4, toAirport);
-// JDBC 4+ can handle LocalDateTime via setObject
+			// JDBC 4+ can handle LocalDateTime via setObject
 			ps.setObject(5, depart);
 			ps.setObject(6, arrive);
 			ps.setString(7, operatingDays);
@@ -574,7 +585,8 @@ public class MySQL {
 
 	public boolean deleteAircraft(String acID) {
 		String sql = "DELETE FROM Aircraft WHERE AircraftID = ?";
-		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+		try (Connection con = getConnection();
+				PreparedStatement ps = con.prepareStatement(sql)) {
 
 			ps.setString(1, acID);
 			int rowsDeleted = ps.executeUpdate();
@@ -585,6 +597,41 @@ public class MySQL {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	/**
+	 * One-way search on an exact date, now including flight-plan flags.
+	 */
+	public List<Map<String,Object>> searchOneWay(
+			String fromAirport,
+			String toAirport,
+			LocalDate departDate,
+			String sortBy)
+	{
+		// whitelist to prevent SQL-injection
+		var allowed = Set.of("f.DepartTime","f.ArrivalTime","duration","price");
+		if (!allowed.contains(sortBy)) sortBy = "f.DepartTime";
+
+		String sql =
+				"SELECT f.FlightID,\n" +
+						"       f.FromAirportID,\n" +
+						"       f.ToAirportID,\n" +
+						"       f.DepartTime,\n" +
+						"       f.ArrivalTime,\n" +
+						"       TIMESTAMPDIFF(MINUTE, f.DepartTime, f.ArrivalTime) AS duration,\n" +
+						"       f.StandardFare AS price,\n" +
+						"       a.Name          AS AirlineName\n" +
+						"  FROM Flight f\n" +
+						"  JOIN Airline a ON a.AirlineID = f.AirlineID\n" +
+						" WHERE f.FromAirportID    = ?\n" +
+						"   AND f.ToAirportID      = ?\n" +
+						"   AND DATE(f.DepartTime) = ?\n" +
+						" ORDER BY " + sortBy;
+
+		return executeQuery(sql,
+				fromAirport,
+				toAirport,
+				Date.valueOf(departDate));
 	}
 
 	public List<Map<String, Object>> getDirectFlights(String fromAirport, String toAirport, LocalDate start,
@@ -804,6 +851,7 @@ public class MySQL {
 		}
 
 
+
 	// 4) Post an answer
 	public boolean addAnswer(int questionId, String employeeId, LocalDateTime when, String message) {
 	  String sql = """
@@ -854,6 +902,237 @@ public class MySQL {
 	 * Flexible one-stop itineraries: both legs depart between (start–3d) and
 	 * (end+3d).
 	 */
+
+	public List<Map<String,Object>> searchFlexible(
+			String fromAirport,
+			String toAirport,
+			LocalDate departDate,
+			String sortBy)
+	{
+		var allowed = Set.of("f.DepartTime","f.ArrivalTime","duration","price");
+		if (!allowed.contains(sortBy)) sortBy = "f.DepartTime";
+
+		String sql =
+				"SELECT f.FlightID,\n" +
+						"       f.FromAirportID,\n" +
+						"       f.ToAirportID,\n" +
+						"       f.DepartTime,\n" +
+						"       f.ArrivalTime,\n" +
+						"       TIMESTAMPDIFF(MINUTE, f.DepartTime, f.ArrivalTime) AS duration,\n" +
+						"       f.StandardFare AS price,\n" +
+						"       a.Name          AS AirlineName\n" +
+						"  FROM Flight f\n" +
+						"  JOIN Airline a ON a.AirlineID = f.AirlineID\n" +
+						" WHERE f.FromAirportID    = ?\n" +
+						"   AND f.ToAirportID      = ?\n" +
+						"   AND DATE(f.DepartTime)\n" +
+						"       BETWEEN DATE_SUB(?, INTERVAL 3 DAY)\n" +
+						"           AND DATE_ADD(?, INTERVAL 3 DAY)\n" +
+						" ORDER BY " + sortBy;
+
+		return executeQuery(sql,
+				fromAirport,
+				toAirport,
+				Date.valueOf(departDate),
+				Date.valueOf(departDate));
+	}
+
+	public Map<String, Object> getMonthlySalesReport(int year, int month) {
+		String sql = "SELECT " +
+				"COUNT(*) as numberOfTickets, " +
+				"COALESCE(SUM(TicketFare), 0) as totalFare, " +
+				"COALESCE(SUM(BookingFee), 0) as totalBookingFee, " +
+				"COALESCE(SUM(TicketFare + BookingFee), 0) as totalRevenue " +
+				"FROM Ticket " + // Ensure your table is named 'Ticket'
+				"WHERE YEAR(PurchaseDateTime) = ? AND MONTH(PurchaseDateTime) = ?";
+
+		// 'executeQuery' is your existing method in MySQL.java
+		List<Map<String, Object>> results = executeQuery(sql, year, month);
+
+		if (!results.isEmpty() && results.get(0) != null) {
+			Map<String, Object> reportData = results.get(0);
+			// Ensure all expected keys have non-null values, defaulting to 0 or BigDecimal.ZERO
+			// COUNT(*) in MySQL returns BIGINT (Long in Java)
+			reportData.putIfAbsent("numberOfTickets", 0L);
+			reportData.putIfAbsent("totalFare", java.math.BigDecimal.ZERO);
+			reportData.putIfAbsent("totalBookingFee", java.math.BigDecimal.ZERO);
+			reportData.putIfAbsent("totalRevenue", java.math.BigDecimal.ZERO);
+			return reportData;
+		} else {
+			// This case handles if executeQuery returns an empty list (e.g., on SQL error)
+			// or if the query itself correctly returns no rows (which COALESCE should handle by returning 0s)
+			Map<String, Object> emptyResult = new HashMap<>();
+			emptyResult.put("numberOfTickets", 0L);
+			emptyResult.put("totalFare", java.math.BigDecimal.ZERO);
+			emptyResult.put("totalBookingFee", java.math.BigDecimal.ZERO);
+			emptyResult.put("totalRevenue", java.math.BigDecimal.ZERO);
+			return emptyResult;
+		}
+	}
+
+	public List<Map<String, Object>> getReservationsByFlightNumber(String flightNumberValue) {
+		// Flight.FlightNumber is an INT.
+		String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
+				"c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+				"f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
+				"FROM Ticket t " +
+				"JOIN Customer c ON t.CustomerID = c.CustomerID " +
+				"JOIN Flight f ON t.FlightID = f.FlightID " +
+				"JOIN Airline al ON f.AirlineID = al.AirlineID " +
+				"WHERE f.FlightNumber = ?";
+		try {
+			int fn = Integer.parseInt(flightNumberValue);
+			return executeQuery(sql, fn);
+		} catch (NumberFormatException e) {
+			System.err.println("Flight number search requires an integer. Value received: " + flightNumberValue + ". Error: " + e.getMessage());
+			return new ArrayList<>(); // Return empty list if format is wrong
+		}
+	}
+
+	public List<Map<String, Object>> getReservationsByCustomerName(String customerNamePart) {
+		String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
+				"c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+				"f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
+				"FROM Ticket t " +
+				"JOIN Customer c ON t.CustomerID = c.CustomerID " +
+				"JOIN Flight f ON t.FlightID = f.FlightID " +
+				"JOIN Airline al ON f.AirlineID = al.AirlineID " +
+				"WHERE c.FirstName LIKE ? OR c.LastName LIKE ?";
+		String searchPattern = "%" + customerNamePart + "%";
+		return executeQuery(sql, searchPattern, searchPattern);
+	}
+
+	public List<Map<String, Object>> getReservationsByCustomerID(String customerID) {
+		String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
+				"c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+				"f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
+				"FROM Ticket t " +
+				"JOIN Customer c ON t.CustomerID = c.CustomerID " +
+				"JOIN Flight f ON t.FlightID = f.FlightID " +
+				"JOIN Airline al ON f.AirlineID = al.AirlineID " +
+				"WHERE t.CustomerID = ?";
+		return executeQuery(sql, customerID);
+	}
+
+	/**
+	 * Finds the customer who has generated the most total revenue.
+	 * Revenue is calculated as SUM(TicketFare + BookingFee).
+	 * @return A Map containing CustomerID, FirstName, LastName, and TotalRevenue,
+	 * or an empty map if no ticket data exists.
+	 */
+	public Map<String, Object> getTopRevenueCustomer() {
+		String sql = "SELECT c.CustomerID, c.FirstName, c.LastName, " +
+				"SUM(t.TicketFare + t.BookingFee) AS TotalRevenue " +
+				"FROM Ticket t " +
+				"JOIN Customer c ON t.CustomerID = c.CustomerID " +
+				"GROUP BY c.CustomerID, c.FirstName, c.LastName " +
+				"ORDER BY TotalRevenue DESC " +
+				"LIMIT 1";
+		List<Map<String, Object>> results = executeQuery(sql);
+		if (!results.isEmpty()) {
+			return results.get(0);
+		}
+		return new HashMap<>(); // Return empty map if no results
+	}
+
+	/**
+	 * Produces a list of most active flights based on the number of tickets sold.
+	 * @param limit The number of top active flights to return.
+	 * @return A List of Maps, each containing FlightID, FlightNumber, FromAirportID, ToAirportID, AirlineName and TicketCount.
+	 */
+	public List<Map<String, Object>> getMostActiveFlights(int limit) {
+		String sql = "SELECT f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, al.Name AS AirlineName, " +
+				"COUNT(t.TicketID) AS TicketCount " +
+				"FROM Ticket t " +
+				"JOIN Flight f ON t.FlightID = f.FlightID " +
+				"JOIN Airline al ON f.AirlineID = al.AirlineID " +
+				"GROUP BY f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, al.Name " +
+				"ORDER BY TicketCount DESC " +
+				"LIMIT ?";
+		return executeQuery(sql, limit);
+	}
+	
+	/**
+     * Calculates total revenue generated by a specific FlightID.
+     * Revenue is SUM(TicketFare + BookingFee).
+     * @param flightID The ID of the flight.
+     * @return Total revenue as BigDecimal, or BigDecimal.ZERO if no tickets or flight.
+     */
+    public BigDecimal getRevenueByFlightID(int flightID) {
+        String sql = "SELECT COALESCE(SUM(t.TicketFare + t.BookingFee), 0) AS TotalRevenue " +
+                     "FROM Ticket t " +
+                     "WHERE t.FlightID = ?";
+        List<Map<String, Object>> results = executeQuery(sql, flightID);
+        if (!results.isEmpty() && results.get(0) != null && results.get(0).get("TotalRevenue") != null) {
+            Object revenueObj = results.get(0).get("TotalRevenue");
+            if (revenueObj instanceof BigDecimal) {
+                return (BigDecimal) revenueObj;
+            } else if (revenueObj instanceof Number) {
+                return new BigDecimal(((Number) revenueObj).toString());
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Calculates total revenue generated by a specific AirlineID.
+     * Revenue is SUM(TicketFare + BookingFee) for all tickets on flights of that airline.
+     * @param airlineID The ID of the airline.
+     * @return Total revenue as BigDecimal, or BigDecimal.ZERO if no tickets or airline.
+     */
+    public BigDecimal getRevenueByAirlineID(int airlineID) {
+        String sql = "SELECT COALESCE(SUM(t.TicketFare + t.BookingFee), 0) AS TotalRevenue " +
+                     "FROM Ticket t " +
+                     "JOIN Flight f ON t.FlightID = f.FlightID " +
+                     "WHERE f.AirlineID = ?";
+        List<Map<String, Object>> results = executeQuery(sql, airlineID);
+         if (!results.isEmpty() && results.get(0) != null && results.get(0).get("TotalRevenue") != null) {
+            Object revenueObj = results.get(0).get("TotalRevenue");
+            if (revenueObj instanceof BigDecimal) {
+                return (BigDecimal) revenueObj;
+            } else if (revenueObj instanceof Number) {
+                return new BigDecimal(((Number) revenueObj).toString());
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Calculates total revenue generated by a specific CustomerID.
+     * Revenue is SUM(TicketFare + BookingFee).
+     * @param customerID The ID of the customer.
+     * @return Total revenue as BigDecimal, or BigDecimal.ZERO if no tickets for the customer.
+     */
+    public BigDecimal getRevenueByCustomerID(String customerID) {
+        String sql = "SELECT COALESCE(SUM(t.TicketFare + t.BookingFee), 0) AS TotalRevenue " +
+                     "FROM Ticket t " +
+                     "WHERE t.CustomerID = ?";
+        List<Map<String, Object>> results = executeQuery(sql, customerID);
+        if (!results.isEmpty() && results.get(0) != null && results.get(0).get("TotalRevenue") != null) {
+            Object revenueObj = results.get(0).get("TotalRevenue");
+            if (revenueObj instanceof BigDecimal) {
+                return (BigDecimal) revenueObj;
+            } else if (revenueObj instanceof Number) {
+                return new BigDecimal(((Number) revenueObj).toString());
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Helper method to get Airline details by ID (e.g., to fetch Name).
+     * @param airlineID The ID of the airline.
+     * @return A Map containing airline details, or null if not found.
+     */
+    public Map<String, Object> getAirlineByID(int airlineID) {
+        String sql = "SELECT AirlineID, Name FROM Airline WHERE AirlineID = ?";
+        List<Map<String, Object>> results = executeQuery(sql, airlineID);
+        if (!results.isEmpty()) {
+            return results.get(0);
+        }
+        return null;
+    }
+
 	public List<Map<String, Object>> getOneStopFlightsFlexible(String fromAirport, String toAirport, LocalDate start,
 			LocalDate end) throws SQLException {
 		LocalDate flexStart = start.minusDays(3);
@@ -997,7 +1276,6 @@ public class MySQL {
 		String sql = "SELECT * FROM FlightPlan WHERE CustomerID = ?";
 		return executeQuery(sql, cust_id);
 	}
-	
 	
 
 }

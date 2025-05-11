@@ -1,4 +1,3 @@
-
 import jakarta.servlet.annotation.MultipartConfig; 
 
 import jakarta.servlet.RequestDispatcher;
@@ -19,12 +18,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
+
 
 /**
  * Servlet implementation class Admin
  */
 @WebServlet({"/Admin", "/CreateEmployee", "/DeleteEmployee", "/EditEmployee",
-			"/EditCustomer", "/DeleteCustomer"})
+             "/EditCustomer", "/DeleteCustomer"})
 public class Admin extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
@@ -37,9 +38,7 @@ public class Admin extends HttpServlet {
     }
     
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MySQL r = new MySQL();
 		// Ensure authenticated account
@@ -175,8 +174,8 @@ public class Admin extends HttpServlet {
 		}
 
 		else if (request.getServletPath().equals("/EditCustomer")) {
-		    // 1) Pull every field out of the POST
-		    String custId    = request.getParameter("customerId");  // match your hidden input name
+		    // Pull every field out of the POST
+		    String custId    = request.getParameter("customerId"); 
 		    String password  = request.getParameter("Password");
 		    String firstName = request.getParameter("FirstName");
 		    String lastName  = request.getParameter("LastName");

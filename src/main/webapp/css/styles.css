@@ -113,3 +113,31 @@ button.cancel-btn {
     text-align: center;
     font-weight: 600;
 }
+
+    .report-section {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .report-form label {
+        margin-right: 10px;
+    }
+    .report-form input[type="month"], .report-form input[type="submit"] {
+        margin-right: 10px;
+        padding: 8px;
+    }
+    .report-table {
+        margin-top: 15px;
+        width: 50%;
+        border-collapse: collapse;
+    }
+    .report-table th, .report-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .report-table th {
+        background-color: #f2f2f2;
+    }
