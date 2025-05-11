@@ -31,8 +31,8 @@
   <jsp:include page="header.jsp" />
   <h1>Edit Aircraft</h1>
   <form method="post"
-        action="<%= request.getContextPath() %>/editAircraft"
-        onsubmit="return validateAircraftSeats()">
+      action="<%= request.getContextPath() %>/CustRep/editAircraft"
+      onsubmit="return validateAircraftSeats()">
 
     <!-- keep PK hidden -->
     <input type="hidden"
