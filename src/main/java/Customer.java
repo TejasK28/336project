@@ -17,7 +17,8 @@ import java.util.Map;
 /**
  * Servlet implementation class Customer
  */
-@WebServlet({"/addRTFlightToPlan", "/addOWFlightToPlan", "/addLayFlightToPlan", "/reserveFlights"})
+@WebServlet({"/addRTFlightToPlan", "/addOWFlightToPlan", "/addLayFlightToPlan", "/reserveFlights",
+	"/ViewFlightPlan/*"})
 public class Customer extends HttpServlet {
 	private static final long serialVersionUID = 1L;
     /**
@@ -33,6 +34,7 @@ public class Customer extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MySQL db = new MySQL();
+		String pathInfo = request.getPathInfo();
 		if ("/reserveFlights".equals(request.getServletPath())) {
 		    List<String> custFlightPlan = (List<String>) request.getSession().getAttribute("CustFlightPlan");
 		    if (custFlightPlan == null || custFlightPlan.isEmpty()) {
@@ -49,6 +51,9 @@ public class Customer extends HttpServlet {
 		    
 		    request.setAttribute("flights", flights);
 		    request.getRequestDispatcher("/MakeRes.jsp").forward(request, response);
+		}
+		else if ("/ViewFlightPlan".equals(request.getContextPath()) && pathInfo != null) {
+			request.getRequestDispatcher("/ViewFlightPlan.jsp").forward(request, response);
 		}
 	}
 	/**
@@ -167,7 +172,8 @@ public class Customer extends HttpServlet {
 		    
 		    Map<String, String> flightIDClassMapping = new HashMap<>();
 		    for (int i = 0; i < custFlightPlan.size(); i++) {
-		    	flightIDClassMapping.put(custFlightPlan.get(i), request.getParameter("flight"+(i+1)+"Id"));
+		    	int flightID = Integer.parseInt(request.getParameter("flight"+(i+1)+"Id"));
+		    	flightIDClassMapping.put(custFlightPlan.get(i), request.getParameter("class_"+flightID));
 		    }
 		    
 		    int fpID = 0;
@@ -185,8 +191,10 @@ public class Customer extends HttpServlet {
 		   
 		    for (int i = 0; i < custFlightPlan.size(); i++) {
 				int flightID = Integer.parseInt(custFlightPlan.get(i));
-//				float ticketFare = 
-				db.insertItinerarySegment(fpID, i, flightIDClassMapping.get(custFlightPlan.get(i)), flightID);
+				
+				String classString = flightIDClassMapping.get("" + flightID);
+				System.out.println(classString);
+				db.insertItinerarySegment(fpID, i, classString, flightID);
 		    }
 		    
 		    request.setAttribute("FPSuccess", true);

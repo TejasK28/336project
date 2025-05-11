@@ -111,7 +111,7 @@
                           : 0.0;
     %>
     <tr>
-      <td><%= id %></td>
+      <td><a href="<%= request.getContextPath() + "/ViewFlightPlan/" + id %>"><%= id %></a></td>
       <td><%= dur %></td>
       <td>$<%= String.format("%.2f", fare) %></td>
     </tr>
