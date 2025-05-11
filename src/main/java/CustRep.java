@@ -1,4 +1,3 @@
-
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,13 +9,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Servlet implementation class CustRep
- */
 @WebServlet({
     "/CustRep",                   // dashboard
     "/CustRep/airport/*",         // view flights at one airport
@@ -31,418 +26,343 @@ import java.util.Map;
     "/createAircraft",
     "/createAirport"
 })
-
 public class CustRep extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * @see HttpServlet#HttpServlet()
-	 */
-	public CustRep() {
-		super();
-		// TODO Auto-generated constructor stub
-	}
+    public CustRep() {
+        super();
+    }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		// Ensure authenticated account
-		if (request.getSession().getAttribute("authenticated") == null) {
-			response.sendRedirect(request.getContextPath() + "/Home");
-			return;
-		}
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Ensure authenticated account
+        if (request.getSession().getAttribute("authenticated") == null) {
+            response.sendRedirect(request.getContextPath() + "/Home");
+            return;
+        }
 
-		MySQL r = new MySQL();
-		String pathInfo = request.getPathInfo();
-		if ("/CustRep".equals(request.getServletPath()) && pathInfo == null) {
-			// Grab Airport data from database
-			List<Map<String, Object>> airports = r.getAllAirports();
-			request.setAttribute("airports", airports);
-			
-			for (Map<String, Object> airport : airports) {
-				airport.put("numArriving", r.getNumArrivingFlightsByAirportID((String) airport.get("AirportID")));
-				airport.put("numDeparting", r.getNumDepartingFlightByAirportID((String) airport.get("AirportID")));
-			}
+        MySQL db = new MySQL();
+        String servletPath = request.getServletPath(); // e.g. "/CustRep" or "/CustRep/airport"
+        String pathInfo    = request.getPathInfo();    // e.g. null or "/AMS"
 
-			// Grab Airline data from database
-			List<Map<String, Object>> airlines = r.getAllAirlines();
-			request.setAttribute("airlines", airlines);
+        // 1) Dashboard
+        if ("/CustRep".equals(servletPath) && pathInfo == null) {
+            List<Map<String,Object>> airports = db.getAllAirports();
+            for (Map<String,Object> ap : airports) {
+                ap.put("numArriving",  db.getNumArrivingFlightsByAirportID((String)ap.get("AirportID")));
+                ap.put("numDeparting", db.getNumDepartingFlightByAirportID((String)ap.get("AirportID")));
+            }
+            request.setAttribute("airports", airports);
+            request.setAttribute("airlines", db.getAllAirlines());
+            request.setAttribute("flights",  db.getAllFlights());
+            RequestDispatcher rd = request.getRequestDispatcher("CustRepPortal.jsp");
+            rd.forward(request, response);
+            return;
+        }
 
-			// Grab Flight data from database
-			List<Map<String, Object>> flights = r.getAllFlights();
-			request.setAttribute("flights", flights);
+        // 2) View flights at one airport: /CustRep/airport/{code}
+        if ("/CustRep/airport".equals(servletPath) && pathInfo != null) {
+            String airportId = pathInfo.substring(1);  // drop leading '/'
+            request.setAttribute("airport_flights", db.getFlightsAtAirport(airportId));
+            RequestDispatcher rd = request.getRequestDispatcher("/Airport.jsp");
+            rd.forward(request, response);
+            return;
+        }
 
-			RequestDispatcher dispatcher = request.getRequestDispatcher("CustRepPortal.jsp");
-			dispatcher.forward(request, response);
-		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/airport")) {
-			if (pathInfo != null) {
-				System.out.println("It got here!");
-				String airport_id = pathInfo.split("/")[2];
-				request.setAttribute("airport_flights", r.getFlightsAtAirport(airport_id));
-//				response.sendRedirect("Airport.jsp");
-				RequestDispatcher dispatcher = request.getRequestDispatcher("/Airport.jsp");
-				dispatcher.forward(request, response);
-				return;
-			}
-		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/editFlight")) {
-		    String fid = request.getParameter("flightId");
-		    request.setAttribute("flight", r.getFlightByFID(fid));
+        // 3) Edit Flight form
+        if ("/CustRep/editFlight".equals(servletPath)) {
+            String fid = request.getParameter("flightId");
+            request.setAttribute("flight",     db.getFlightByFID(fid));
+            request.setAttribute("airports",   db.getAllAirports());
+            request.setAttribute("airlines",   db.getAllAirlines());
+            request.setAttribute("aircrafts",  db.getAllAircrafts());
+            request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
+            return;
+        }
 
-		    // Grab Airport data
-		    List<Map<String,Object>> airports = r.getAllAirports();
-		    request.setAttribute("airports", airports);
+        // 4) Edit Airport form
+        if ("/CustRep/editAirport".equals(servletPath)) {
+            String aid = request.getParameter("airportID");
+            request.setAttribute("airport", db.getAirportByID(aid));
+            request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
+            return;
+        }
 
-		    // Grab Airline data
-		    List<Map<String,Object>> airlines = r.getAllAirlines();
-		    request.setAttribute("airlines", airlines);
+        // 5) View Aircrafts by Airline
+        if ("/CustRep/airline".equals(servletPath)) {
+            String airlineID = request.getParameter("airlineId");
+            request.setAttribute("ownedAircrafts", db.getOwnedAircraftsByAirlineID(airlineID));
+            request.getRequestDispatcher("/viewAircrafts.jsp").forward(request, response);
+            return;
+        }
 
-		    // *** NEW: Grab Aircraft data too ***
-		    List<Map<String,Object>> aircrafts = r.getAllAircrafts(); 
-		    request.setAttribute("aircrafts", aircrafts);
+        // 6) Edit Aircraft form
+        if ("/CustRep/editAircraft".equals(servletPath)) {
+            String acID = request.getParameter("aircraftID");
+            request.setAttribute("aircraft", db.getAircraftByID(acID));
+            request.setAttribute("airlines", db.getAllAirlines());
+            request.getRequestDispatcher("/EditAircraft.jsp").forward(request, response);
+            return;
+        }
 
-		    request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
-		    return;
-		}
- else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/editAirport")) {
-			String aid = request.getParameter("airportID");
-			request.setAttribute("airport", r.getAirportByID(aid));
+        // 7) View Waitlist
+        if ("/CustRep".equals(servletPath) && pathInfo != null && pathInfo.startsWith("/waitlist")) {
+            int fid = Integer.parseInt(request.getParameter("flightId"));
+            request.setAttribute("waitlist",  db.getWaitingListByFlight(fid));
+            request.setAttribute("flightId",  fid);
+            request.getRequestDispatcher("/Waitlist.jsp").forward(request, response);
+            return;
+        }
 
-			request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
-			return;
-		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/airline")) {
-			String airlineID = request.getParameter("airlineId");
-			request.setAttribute("ownedAircrafts", r.getOwnedAircraftsByAirlineID(airlineID));
+        // If no GET mapping matched
+        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                "GET method is not allowed on this route.");
+    }
 
-			request.getRequestDispatcher("/viewAircrafts.jsp").forward(request, response);
-			return;
-		
-		} else if ("/CustRep".equals(request.getServletPath()) 
-		         && pathInfo.contains("/editAircraft")) {
-			  String acID = request.getParameter("aircraftID");
-			  request.setAttribute("aircraft", r.getAircraftByID(acID));
-			  request.setAttribute("airlines", r.getAllAirlines());
-			  request.getRequestDispatcher("/EditAircraft.jsp")
-			         .forward(request, response);
-			  return;
-			}
-		
-	else if ("/CustRep".equals(request.getServletPath())
-	         && pathInfo != null 
-	         && pathInfo.startsWith("/waitlist")) {
-	    // e.g. /CustRep/waitlist?flightId=123
-	    int fid = Integer.parseInt(request.getParameter("flightId"));
-	    List<Map<String,Object>> waitlist = r.getWaitingListByFlight(fid);
-	    request.setAttribute("waitlist", waitlist);
-	    // also pass flightId if you like
-	    request.setAttribute("flightId", fid);
-	    request.getRequestDispatcher("/Waitlist.jsp")
-	           .forward(request, response);
-	    return;
-	}
-		
-			else {
-			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
-			return;
-		}
-	}
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        MySQL db = new MySQL();
+        String servletPath = request.getServletPath();
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		MySQL db = new MySQL();
-		if ("/createFlight".equals(request.getServletPath())) {
-			// 1. Read form parameters
-			String flightNumberStr = request.getParameter("FlightNumber");
-			String airlineId = request.getParameter("AirlineID");
-			String fromAirportId = request.getParameter("FromAirportID");
-			String toAirportId = request.getParameter("ToAirportID");
-			String departTimeStr = request.getParameter("DepartTime");
-			String arrivalTimeStr = request.getParameter("ArrivalTime");
-			String operatingDays = request.getParameter("OperatingDays");
+        if ("/createFlight".equals(servletPath)) {
+            // --- existing createFlight logic ---
+            String flightNumberStr = request.getParameter("FlightNumber");
+            String airlineId = request.getParameter("AirlineID");
+            String fromAirportId = request.getParameter("FromAirportID");
+            String toAirportId = request.getParameter("ToAirportID");
+            String departTimeStr = request.getParameter("DepartTime");
+            String arrivalTimeStr = request.getParameter("ArrivalTime");
+            String operatingDays = request.getParameter("OperatingDays");
 
-			// 2. Basic validation
-			if (flightNumberStr == null || airlineId == null || fromAirportId == null || toAirportId == null
-					|| departTimeStr == null || arrivalTimeStr == null || fromAirportId.equals(toAirportId)) {
-				request.setAttribute("error", "All fields required, airports must differ.");
-				request.getRequestDispatcher("/WEB-INF/jsp/createFlight.jsp").forward(request, response);
-				return;
-			}
+            if (flightNumberStr == null || airlineId == null || fromAirportId == null || toAirportId == null
+                    || departTimeStr == null || arrivalTimeStr == null || fromAirportId.equals(toAirportId)) {
+                request.setAttribute("error", "All fields required, airports must differ.");
+                request.getRequestDispatcher("/WEB-INF/jsp/createFlight.jsp").forward(request, response);
+                return;
+            }
 
-			int flightNumber = Integer.parseInt(flightNumberStr);
-			int aId = Integer.parseInt(airlineId);
+            int flightNumber = Integer.parseInt(flightNumberStr);
+            int aId = Integer.parseInt(airlineId);
 
-			// 3. Convert datetime-local to Timestamp
-			java.sql.Timestamp departTimestamp = java.sql.Timestamp.valueOf(departTimeStr.replace('T', ' ') + ":00");
-			java.sql.Timestamp arrivalTimestamp = java.sql.Timestamp.valueOf(arrivalTimeStr.replace('T', ' ') + ":00");
+            java.sql.Timestamp departTimestamp = java.sql.Timestamp.valueOf(departTimeStr.replace('T', ' ') + ":00");
+            java.sql.Timestamp arrivalTimestamp = java.sql.Timestamp.valueOf(arrivalTimeStr.replace('T', ' ') + ":00");
 
-			// 4. Insert into database (now including AirlineID)
-			String sql = "INSERT INTO Flight "
-					+ "(FlightNumber, AirlineID, FromAirportID, ToAirportID, DepartTime, ArrivalTime, OperatingDays) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO Flight "
+                    + "(FlightNumber, AirlineID, FromAirportID, ToAirportID, DepartTime, ArrivalTime, OperatingDays) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-			try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            try (Connection con = db.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, flightNumber);
+                ps.setInt(2, aId);
+                ps.setString(3, fromAirportId);
+                ps.setString(4, toAirportId);
+                ps.setTimestamp(5, departTimestamp);
+                ps.setTimestamp(6, arrivalTimestamp);
+                ps.setString(7, operatingDays);
+                int inserted = ps.executeUpdate();
+                if (inserted > 0) {
+                    response.sendRedirect(request.getContextPath() + "/CustRep");
+                    return;
+                } else {
+                    request.setAttribute("error", "Failed to create flight.");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                request.setAttribute("error", "Database error: " + e.getMessage());
+            }
+            request.getRequestDispatcher("/CustRep").forward(request, response);
+            return;
+        }
 
-				ps.setInt(1, flightNumber);
-				ps.setInt(2, aId);
-				ps.setString(3, fromAirportId);
-				ps.setString(4, toAirportId);
-				ps.setTimestamp(5, departTimestamp);
-				ps.setTimestamp(6, arrivalTimestamp);
-				ps.setString(7, operatingDays);
+        if ("/createAircraft".equals(servletPath)) {
+            // --- existing createAircraft logic ---
+            String airlineId = request.getParameter("AirlineID");
+            String model = request.getParameter("Model");
+            String totalSeatsStr = request.getParameter("TotalSeats");
+            String ecoStr = request.getParameter("EconomySeats");
+            String bizStr = request.getParameter("BusinessSeats");
+            String firstStr = request.getParameter("FirstClassSeats");
+            int total = Integer.parseInt(totalSeatsStr);
+            int eco = Integer.parseInt(ecoStr);
+            int biz = Integer.parseInt(bizStr);
+            int first = Integer.parseInt(firstStr);
+            if (total <= 0 || eco <= 0 || biz <= 0 || first <= 0 || total != eco + biz + first) {
+                request.setAttribute("createAircraftError", "Error in seat configuration!");
+                request.getRequestDispatcher("/CustRep").forward(request, response);
+                return;
+            }
+            String configStr = "E:" + eco + ",B:" + biz + ",F:" + first;
+            if (!db.addAircraft(airlineId, model, total, configStr)) {
+                request.setAttribute("createAircraftError", "Database error!");
+                response.sendRedirect(request.getContextPath() + "/CustRep");
+                return;
+            }
+            response.sendRedirect(request.getContextPath() + "/CustRep");
+            return;
+        }
 
-				int inserted = ps.executeUpdate();
-				if (inserted > 0) {
-					// success
-					response.sendRedirect(request.getContextPath() + "/CustRep");
-					return;
-				} else {
-					request.setAttribute("error", "Failed to create flight.");
-				}
+        if ("/createAirport".equals(servletPath)) {
+            // --- existing createAirport logic ---
+            String airportId = request.getParameter("AirportID");
+            String name = request.getParameter("Name");
+            String city = request.getParameter("City");
+            String country = request.getParameter("Country");
+            if (!db.addAirport(airportId, name, city, country)) {
+                request.setAttribute("createAirportError", "Database error!");
+                request.getRequestDispatcher("/CustRep").forward(request, response);
+                return;
+            }
+            response.sendRedirect(request.getContextPath() + "/CustRep");
+            return;
+        }
 
-			} catch (SQLException e) {
-				e.printStackTrace();
-				request.setAttribute("error", "Database error: " + e.getMessage());
-			}
+        if ("/deleteFlight".equals(servletPath)) {
+            String flightId = request.getParameter("flightId");
+            String referer = request.getHeader("Referer");
+            if (!db.deleteFlightByFID(flightId)) {
+                request.setAttribute("deleteFlightFailed", "Deleting the flight failed!");
+            }
+            response.sendRedirect(referer);
+            return;
+        }
 
-			// failure: back to form
-			request.getRequestDispatcher("/CustRep").forward(request, response);
-		} else if ("/createAircraft".equals(request.getServletPath())) {
-			String airlineId = request.getParameter("AirlineID");
-			String model = request.getParameter("Model");
-			String totalSeatsStr = request.getParameter("TotalSeats");
-			String ecoStr = request.getParameter("EconomySeats");
-			String bizStr = request.getParameter("BusinessSeats");
-			String firstStr = request.getParameter("FirstClassSeats");
+        if ("/editFlight".equals(servletPath)) {
+            // --- existing editFlight POST logic ---
+            String flightIdStr   = request.getParameter("FlightID");
+            String flightNumStr  = request.getParameter("FlightNumber");
+            String airlineIdStr  = request.getParameter("AirlineID");
+            String fromAirportId = request.getParameter("FromAirportID");
+            String toAirportId   = request.getParameter("ToAirportID");
+            String departTimeStr = request.getParameter("DepartTime");
+            String arrivalTimeStr= request.getParameter("ArrivalTime");
+            String operatingDays = request.getParameter("OperatingDays");
+            String aircraftIdStr = request.getParameter("AircraftID");
 
-			String configStr = "";
+            if (flightIdStr == null || flightNumStr == null || airlineIdStr == null ||
+                fromAirportId == null || toAirportId == null ||
+                departTimeStr == null || arrivalTimeStr == null ||
+                fromAirportId.equals(toAirportId)) {
+                request.setAttribute("error", "All fields required and airports must differ.");
+                request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
+                return;
+            }
 
-			// parse & validate
-			int total = Integer.parseInt(totalSeatsStr);
-			int eco = Integer.parseInt(ecoStr);
-			int biz = Integer.parseInt(bizStr);
-			int first = Integer.parseInt(firstStr);
+            int flightId  = Integer.parseInt(flightIdStr);
+            int flightNum = Integer.parseInt(flightNumStr);
+            int airlineId = Integer.parseInt(airlineIdStr);
+            LocalDateTime depart = LocalDateTime.parse(departTimeStr);
+            LocalDateTime arrive = LocalDateTime.parse(arrivalTimeStr);
 
-			if (total <= 0 || eco <= 0 || biz <= 0 || first <= 0 || total != eco + biz + first) {
-				request.setAttribute("createAircraftError", "Error in seat configuration!");
-				request.getRequestDispatcher("/CustRep").forward(request, response);
-				return;
-			} else {
-				configStr = "E:" + eco + "," + "B:" + biz + "," + "F:" + first;
-			}
+            try {
+                boolean ok = db.updateFlight(
+                        flightId, flightNum, airlineId,
+                        fromAirportId, toAirportId,
+                        depart, arrive,
+                        operatingDays,
+                        Integer.parseInt(aircraftIdStr)
+                );
+                if (!ok) {
+                    request.setAttribute("error", "Update failed.");
+                    request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
+                    return;
+                }
+            } catch (Exception e) {
+                throw new ServletException("Error updating flight", e);
+            }
 
-			System.out.println(configStr);
+            response.sendRedirect(request.getContextPath() + "/CustRep");
+            return;
+        }
 
-			if (!db.addAircraft(airlineId, model, total, configStr)) {
-				request.setAttribute("createAircraftError", "Database error!");
-				response.sendRedirect(request.getContextPath() + "/CustRep");
-//				request.getRequestDispatcher("/CustRep").forward(request, response);
-				return;
-			}
+        if ("/editAirport".equals(servletPath)) {
+            // --- existing editAirport POST logic ---
+            String oldAID  = request.getParameter("originalAID");
+            String newAID  = request.getParameter("identifierCode");
+            String name    = request.getParameter("Name");
+            String city    = request.getParameter("City");
+            String country = request.getParameter("Country");
 
-			response.sendRedirect(request.getContextPath() + "/CustRep");
-			return;
-		} else if ("/createAirport".equals(request.getServletPath())) {
-			String airportId = request.getParameter("AirportID");
-			String name = request.getParameter("Name");
-			String city = request.getParameter("City");
-			String country = request.getParameter("Country");
+            if (oldAID == null || newAID == null || name == null ||
+                city == null || country == null ||
+                oldAID.isBlank() || newAID.isBlank() ||
+                name.isBlank() || city.isBlank() || country.isBlank()) {
+                request.setAttribute("error", "All fields are required.");
+                request.setAttribute("airport", db.getAirportByID(oldAID));
+                request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
+                return;
+            }
 
-			if (!db.addAirport(airportId, name, city, country)) {
-				System.out.println("Database error in Airport insertion!");
-				request.setAttribute("createAirportError", "Database error!");
-				request.getRequestDispatcher("/CustRep").forward(request, response);
-				return;
-			}
-			response.sendRedirect(request.getContextPath() + "/CustRep");
-			return;
-		} else if ("/deleteFlight".equals(request.getServletPath())) {
-			String flightId = request.getParameter("flightId");
-			String referer = request.getHeader("Referer");
+            try {
+                boolean ok = db.updateAirport(newAID, name, city, country, oldAID);
+                if (!ok) {
+                    request.setAttribute("airport", db.getAirportByID(oldAID));
+                    request.setAttribute("error", "Update failed.");
+                    request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
+                    return;
+                }
+            } catch (Exception e) {
+                throw new ServletException("Error updating airport", e);
+            }
 
-			if (!db.deleteFlightByFID(flightId)) {
-				request.setAttribute("deleteFlightFailed", "Deleting the flight failed!");
-			}
-			response.sendRedirect(referer);
-			return;
-		} else if ("/editFlight".equals(request.getServletPath())) {
-			String flightIdStr = request.getParameter("FlightID");
-			String flightNumStr = request.getParameter("FlightNumber");
-			String airlineIdStr = request.getParameter("AirlineID");
-			String fromAirportId = request.getParameter("FromAirportID");
-			String toAirportId = request.getParameter("ToAirportID");
-			String departTimeStr = request.getParameter("DepartTime"); // "2025-05-10T14:30"
-			String arrivalTimeStr = request.getParameter("ArrivalTime");
-			String operatingDays = request.getParameter("OperatingDays");
-			String aircraftIdStr = request.getParameter("AircraftID");    // NEW
+            response.sendRedirect(request.getContextPath() + "/CustRep");
+            return;
+        }
 
+        if ("/deleteAirport".equals(servletPath)) {
+            // --- existing deleteAirport logic ---
+            String aID = request.getParameter("airportID");
+            if (!db.deleteAirport(aID)) {
+                request.setAttribute("airportDeleteError", "Error when deleting airport!");
+            }
+            response.sendRedirect(request.getContextPath() + "/CustRep");
+            return;
+        }
 
-			// 2. Basic validation (you can expand)
-			if (flightIdStr == null || flightNumStr == null || airlineIdStr == null || fromAirportId == null
-					|| toAirportId == null || departTimeStr == null || arrivalTimeStr == null
-					|| fromAirportId.equals(toAirportId)) {
-				request.setAttribute("error", "All fields required and airports must differ.");
-				// re‐forward back to edit form with the same FlightID
-				request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
-				return;
-			}
+        if ("/deleteAircraft".equals(servletPath)) {
+            String acID   = request.getParameter("aircraftID");
+            String referer = request.getHeader("Referer");
+            if (!db.deleteAircraft(acID)) {
+                request.setAttribute("aircraftDeleteError", "Error when deleting aircraft!");
+            }
+            response.sendRedirect(referer);
+            return;
+        }
 
-			// 3. Parse values
-			int flightId = Integer.parseInt(flightIdStr);
-			int flightNum = Integer.parseInt(flightNumStr);
-			int airlineId = Integer.parseInt(airlineIdStr);
+        if ("/editAircraft".equals(servletPath)) {
+            // --- existing editAircraft POST logic ---
+            String acID      = request.getParameter("aircraftID");
+            String airlineId = request.getParameter("AirlineID");
+            String model     = request.getParameter("Model");
+            int total  = Integer.parseInt(request.getParameter("TotalSeats"));
+            int eco    = Integer.parseInt(request.getParameter("EconomySeats"));
+            int biz    = Integer.parseInt(request.getParameter("BusinessSeats"));
+            int first  = Integer.parseInt(request.getParameter("FirstClassSeats"));
 
-			// Convert to java.time.LocalDateTime or java.sql.Timestamp depending on your
-			// DAO
-			LocalDateTime depart = LocalDateTime.parse(departTimeStr);
-			LocalDateTime arrive = LocalDateTime.parse(arrivalTimeStr);
+            if (eco + biz + first != total) {
+                request.setAttribute("error", "Class seats must sum to total seats.");
+                request.setAttribute("aircraft", db.getAircraftByID(acID));
+                request.setAttribute("airlines", db.getAllAirlines());
+                request.getRequestDispatcher("/EditAircraft.jsp").forward(request, response);
+                return;
+            }
 
-			// 4. Update database
-			try {
-				// Assume you add this method to your MySQL helper:
-				// public boolean updateFlight(int flightId, int flightNum, int airlineId,
-				// String fromAirport, String toAirport,
-				// LocalDateTime depart, LocalDateTime arrive, String operatingDays)
-				boolean ok = db.updateFlight(
-					    flightId, flightNum, airlineId,
-					    fromAirportId, toAirportId,
-					    depart, arrive,
-					    operatingDays,
-					    Integer.parseInt(aircraftIdStr)               // NEW
-					);
+            String config = "E:" + eco + ",B:" + biz + ",F:" + first;
+            boolean ok    = db.updateAircraft(acID, airlineId, model, total, config);
+            if (!ok) {
+                request.setAttribute("error", "Failed to update aircraft.");
+                request.setAttribute("aircraft", db.getAircraftByID(acID));
+                request.setAttribute("airlines", db.getAllAirlines());
+                request.getRequestDispatcher("/EditAircraft.jsp").forward(request, response);
+                return;
+            }
 
-				if (!ok) {
-					request.setAttribute("error", "Update failed.");
-					request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
-					return;
-				}
-			} catch (Exception e) {
-				throw new ServletException("Error updating flight", e);
-			}
+            response.sendRedirect(request.getContextPath() + "/CustRep");
+            return;
+        }
 
-			
-			
-				response.sendRedirect(request.getContextPath() + "/CustRep");
-			return;
-		}
-		else if ("/editAirport".equals(request.getServletPath())) {
-		    // 1. Read parameters
-			String oldAID = request.getParameter("originalAID");
-		    String newAID   = request.getParameter("identifierCode");
-		    String name         = request.getParameter("Name");
-		    String city         = request.getParameter("City");
-		    String country      = request.getParameter("Country");
-
-		    // 2. Basic validation
-		    if (oldAID == null || newAID == null || name == null || city == null || country == null
-		        || oldAID.isBlank() || newAID.isBlank() || name.isBlank() || city.isBlank() || country.isBlank()) {
-		        request.setAttribute("error", "All fields are required.");
-		        // re‐forward back to edit form; ensure the airport map is still set
-		        // (you may need to re-fetch it from DB by originalId)
-		        request.setAttribute("airport", db.getAirportByID(oldAID));
-		        request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
-		        return;
-		    }
-
-		    // 3. Perform update
-		    try {
-		        // signature: boolean updateAirport(String oldId, String newId, String name, String city, String country)
-		        // If you don't allow changing the PK, pass originalId twice
-		        boolean ok = db.updateAirport(newAID, name, city, country, oldAID);
-
-		        if (!ok) {
-					request.setAttribute("airport", db.getAirportByID(oldAID));
-		            request.setAttribute("error", "Update failed.");
-		            request.getRequestDispatcher("/EditAirport.jsp").forward(request, response);
-		            return;
-		        }
-
-		    } catch (Exception e) {
-		        throw new ServletException("Error updating airport", e);
-		    }
-
-		    // 4. Redirect back
-			response.sendRedirect(request.getContextPath() + "/CustRep");
-		    return;
-		}
-		else if ("/deleteAirport".equals(request.getServletPath())) {
-			String aID = request.getParameter("airportID");
-			if (!db.deleteAirport(aID)) {
-				request.setAttribute("airportDeleteError", "Error when deleting airport!");
-				response.sendRedirect(request.getContextPath() + "/CustRep");
-				return;
-			}
-			else {
-				response.sendRedirect(request.getContextPath() + "/CustRep");
-			}
-		}
-		else if ("/deleteAircraft".equals(request.getServletPath())) {
-			String acID = request.getParameter("aircraftID");
-			String referer = request.getHeader("Referer");
-			if (!db.deleteAircraft(acID)) {
-				request.setAttribute("aircraftDeleteError", "Error when deleting aircraft!");
-				response.sendRedirect(referer);
-				return;
-			}
-			else {
-				response.sendRedirect(referer);
-			}
-		}
-		
-		else if ("/editAircraft".equals(request.getServletPath())) {
-		    // 1. Read form parameters
-		    String acID       = request.getParameter("aircraftID");
-		    String airlineId  = request.getParameter("AirlineID");
-		    String model      = request.getParameter("Model");
-		    String totalStr   = request.getParameter("TotalSeats");
-		    String ecoStr     = request.getParameter("EconomySeats");
-		    String bizStr     = request.getParameter("BusinessSeats");
-		    String firstStr   = request.getParameter("FirstClassSeats");
-
-		    // 2. Parse & validate
-		    int total = Integer.parseInt(totalStr);
-		    int eco   = Integer.parseInt(ecoStr);
-		    int biz   = Integer.parseInt(bizStr);
-		    int first = Integer.parseInt(firstStr);
-
-		    if (eco + biz + first != total) {
-		        // validation failed → back to form
-		        request.setAttribute("error", "Class seats must sum to total seats.");
-		        // re-fetch aircraft + airlines so EditAircraft.jsp can populate fields
-		        request.setAttribute("aircraft", db.getAircraftByID(acID));
-		        request.setAttribute("airlines", db.getAllAirlines());
-		        request.getRequestDispatcher("/EditAircraft.jsp")
-		               .forward(request, response);
-		        return;
-		    }
-
-		    // 3. Build config string and call update
-		    String config = "E:" + eco + ",B:" + biz + ",F:" + first;
-		    boolean ok = db.updateAircraft(acID, airlineId, model, total, config);
-
-		    if (!ok) {
-		        // update failed → back to form
-		        request.setAttribute("error", "Failed to update aircraft.");
-		        request.setAttribute("aircraft", db.getAircraftByID(acID));
-		        request.setAttribute("airlines", db.getAllAirlines());
-		        request.getRequestDispatcher("/EditAircraft.jsp")
-		               .forward(request, response);
-		        return;
-		    }
-
-		    // 4. Success → redirect to dashboard
-		    response.sendRedirect(request.getContextPath() + "/CustRep");
-		    return;
-		}
-
-		
-		
-
-	}
-
+        // If no POST mapping matched
+        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+    }
 }

@@ -13,19 +13,19 @@
 <body>
   <jsp:include page="header.jsp" />
   <h1>Edit Airport</h1>
-  <form method="post" action="<%= request.getContextPath() %>/editAirport">
+  <form method="post" action="<%= request.getContextPath() %>/CustRep/editAirport">
     <!-- Hidden original PK -->
     <input
       type="hidden"
       name="originalAID"
-      value='<%= String.valueOf(airport.get("AirportID")) %>' />
+      value="<%= airport.get("AirportID") %>" />
 
     <label for="identifierCode">Airport ID (identifier code):</label>
     <input
       type="text"
       id="identifierCode"
       name="identifierCode"
-      value='<%= String.valueOf(airport.get("AirportID")) %>'
+      value="<%= airport.get("AirportID") %>"
       required />
 
     <label for="name">Name:</label>
@@ -33,7 +33,7 @@
       type="text"
       id="name"
       name="Name"
-      value='<%= String.valueOf(airport.get("Name")) %>'
+      value="<%= airport.get("Name") %>"
       required />
 
     <label for="city">City:</label>
@@ -41,7 +41,7 @@
       type="text"
       id="city"
       name="City"
-      value='<%= String.valueOf(airport.get("City")) %>'
+      value="<%= airport.get("City") %>"
       required />
 
     <label for="country">Country:</label>
@@ -49,13 +49,11 @@
       type="text"
       id="country"
       name="Country"
-      value='<%= String.valueOf(airport.get("Country")) %>'
+      value="<%= airport.get("Country") %>"
       required />
 
     <button type="submit" class="btn-save">Save Changes</button>
-    <a href="<%= request.getContextPath() %>/CustRep">
-      <button type="button" class="btn-cancel">Cancel</button>
-    </a>
+    <a href="<%= request.getContextPath() %>/CustRep" class="btn-cancel">Cancel</a>
   </form>
 </body>
 </html>

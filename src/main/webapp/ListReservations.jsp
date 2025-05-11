@@ -1,7 +1,10 @@
 <%@ page import="java.util.List,java.util.Map" %>
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Manage Reservations</title></head>
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Reservations</title>
+</head>
 <body>
   <h1>Manage Reservations</h1>
 
@@ -17,8 +20,7 @@
              String id   = (String)c.get("CustomerID");
              String name = c.get("FirstName") + " " + c.get("LastName");
         %>
-          <option value="<%=id%>"
-            <%= id.equals(selected) ? "selected" : "" %>>
+          <option value="<%=id%>" <%= id.equals(selected) ? "selected" : "" %>>
             <%= name %> (<%= id %>)
           </option>
         <% } %>
@@ -33,8 +35,12 @@
   %>
     <table border="1" cellpadding="4">
       <tr>
-        <th>Flight#</th><th>From/To</th><th>Class</th>
-        <th>Fare</th><th>Booked At</th><th>Edit</th>
+        <th>Flight#</th>
+        <th>From/To</th>
+        <th>Class</th>
+        <th>Fare</th>
+        <th>Booked At</th>
+        <th>Edit</th>
       </tr>
       <% for (Map<String,Object> t : res) {
            int    fnum   = ((Number)t.get("FlightNumber")).intValue();
@@ -54,28 +60,28 @@
           <td><%= fareO %></td>
           <td><%= booked %></td>
           <td>
-            <a
-  href="<%=request.getContextPath()%>/CustRep/reservation/edit?customerId=<%=request.getParameter("customerId")%>&flightId=<%=fid%>&seatNo=<%=seat%>"
->
-  Edit
-</a>
+            <a href="${pageContext.request.contextPath}/CustRep/reservation/edit
+                ?customerId=${param.customerId}
+                &flightId=${t.FlightID}
+                &seatNo=${t.SeatNumber}">
+              Edit
+            </a>
           </td>
         </tr>
       <% } %>
     </table>
   <% } %>
 
-  <% if (request.getParameter("customerId") != null) { 
-     String cust = request.getParameter("customerId");
-%>
-  <p>
-    <a href="<%=request.getContextPath()%>/CustRep/reservation/new?customerId=<%=cust%>">
-      + New Reservation
-    </a>
-  </p>
-<% } %>
-  
+  <% if (request.getParameter("customerId") != null) { %>
+    <p>
+      <a href="${pageContext.request.contextPath}/CustRep/reservation/new?customerId=${param.customerId}">
+        + New Reservation
+      </a>
+    </p>
+  <% } %>
 
-  <p><a href="<%=request.getContextPath()%>/CustRep">Back to Dashboard</a></p>
+  <p>
+    <a href="${pageContext.request.contextPath}/CustRep">Back to Dashboard</a>
+  </p>
 </body>
 </html>
