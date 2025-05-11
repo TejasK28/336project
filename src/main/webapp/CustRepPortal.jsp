@@ -117,8 +117,8 @@
                         <tr>
                             <td><%= f.get("FlightID") %></td>
                             <td><%= f.get("FlightNumber") %></td>
-                            <td><%= f.get("FromAirportID") %></td>
-                            <td><%= f.get("ToAirportID") %></td>
+                            <td><%= f.get("departure_airport") %></td>
+                            <td><%= f.get("arrival_airport") %></td>
                             <td><%= f.get("DepartTime") %></td>
                             <td><%= f.get("ArrivalTime") %></td>
                             <td>
