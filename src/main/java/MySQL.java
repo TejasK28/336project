@@ -21,7 +21,7 @@ public class MySQL {
 
 	private String dburl = "jdbc:mysql://localhost:3306/project";
 	private String dbuname = "root";
-	private String dbpassword = "password";
+	private String dbpassword = "rootrootroot";
 	private String dbdriver = "com.mysql.cj.jdbc.Driver";
 
 	/*
@@ -503,7 +503,6 @@ public class MySQL {
 			e.printStackTrace();
 			return false;
 		}
-
 	}
 
 	public boolean updateAirport(String airportID, String name, String city, String country, String originalAID) {
@@ -793,7 +792,7 @@ public class MySQL {
             // bind parameters
             for (int i = 0; i < params.length; i++) {
                 Object p = params[i];
-                // if it’s a LocalDateTime, convert to Timestamp
+                // if it's a LocalDateTime, convert to Timestamp
                 if (p instanceof LocalDateTime) {
                     ps.setTimestamp(i+1, Timestamp.valueOf((LocalDateTime)p));
                 } else {
@@ -1242,10 +1241,10 @@ public class MySQL {
 	    }
 	}
 	
-	private int getNextSeatNumber(int flightID) {
-		String sql = "SELECT COUNT(*)+1 as seatNum FROM Ticket WHERE FlightID = ?";
-		return Integer.valueOf((String) executeQuery(sql, flightID).get(0).get("seatNum"));
-	}
+	// private int getNextSeatNumber(int flightID) {
+	// 	String sql = "SELECT COUNT(*)+1 as seatNum FROM Ticket WHERE FlightID = ?";
+	// 	return Integer.valueOf((String) executeQuery(sql, flightID).get(0).get("seatNum"));
+	// }
 	
 	public boolean createTicket(int flightID, float ticketFare, String className) {
 	    String sql = 
@@ -1276,6 +1275,205 @@ public class MySQL {
 		String sql = "SELECT * FROM FlightPlan WHERE CustomerID = ?";
 		return executeQuery(sql, cust_id);
 	}
+
+	public List<Map<String, Object>> getAllFlightsInFlightPlan(String flightPlanID) {
+		System.out.println("DEBUG: Getting flights for FlightPlanID: " + flightPlanID);
+		
+		// First get the customer ID for this flight plan
+		String customerSql = "SELECT CustomerID FROM FlightPlan WHERE FlightPlanID = ?";
+		List<Map<String, Object>> customerResult = executeQuery(customerSql, flightPlanID);
+		if (customerResult.isEmpty()) {
+			System.out.println("DEBUG: No flight plan found with ID: " + flightPlanID);
+			return new ArrayList<>();
+		}
+		String customerID = (String) customerResult.get(0).get("CustomerID");
+		System.out.println("DEBUG: Found customer ID: " + customerID);
+		
+		String sql = "SELECT f.FlightID, f.FlightNumber, f.DepartTime, f.ArrivalTime, f.Duration, f.StandardFare, " +
+					"a.Name as airline_name, " +
+					"dep.Name as departure_airport, dep.City as departure_city, dep.Country as departure_country, " +
+					"arr.Name as arrival_airport, arr.City as arrival_city, arr.Country as arrival_country, " +
+					"its.Class, " +
+					"wl.RequestDateTime as waitlist_date, " +
+					"CASE " +
+					"    WHEN EXISTS (SELECT 1 FROM Ticket t WHERE t.FlightID = f.FlightID AND t.Class = its.Class AND t.CustomerID = ?) THEN 'Confirmed' " +
+					"    WHEN EXISTS (SELECT 1 FROM WaitingList wl2 WHERE wl2.FlightID = f.FlightID AND wl2.Class = its.Class AND wl2.CustomerID = ?) THEN 'Waitlisted' " +
+					"    ELSE 'Available' " +
+					"END as status " +
+					"FROM ItinerarySegment its " +
+					"JOIN Flight f ON its.FlightID = f.FlightID " +
+					"JOIN Airline a ON f.AirlineID = a.AirlineID " +
+					"JOIN Airport dep ON f.FromAirportID = dep.AirportID " +
+					"JOIN Airport arr ON f.ToAirportID = arr.AirportID " +
+					"LEFT JOIN WaitingList wl ON wl.FlightID = f.FlightID AND wl.Class = its.Class " +
+					"WHERE its.FlightPlanID = ? " +
+					"ORDER BY its.SegmentNum";
+		
+		List<Map<String, Object>> results = executeQuery(sql, customerID, customerID, flightPlanID);
+		System.out.println("DEBUG: Found " + results.size() + " flights in flight plan");
+		return results;
+	}
 	
+	/**
+	 * Checks if a flight has available seats in a specific class
+	 * @param flightID The flight to check
+	 * @param className The class to check (E, B, or F)
+	 * @return true if seats are available, false if full
+	 */
+	public boolean hasAvailableSeats(int flightID, String className) {
+		// First get the aircraft configuration for this flight
+		String sql = "SELECT a.ClassConfigurations " +
+					"FROM Flight f " +
+					"JOIN Aircraft a ON f.AircraftID = a.AircraftID " +
+					"WHERE f.FlightID = ?";
+		
+		System.out.println("DEBUG: Checking seats for FlightID: " + flightID + ", Class: " + className);
+		
+		List<Map<String, Object>> results = executeQuery(sql, flightID);
+		if (results.isEmpty()) {
+			System.out.println("DEBUG: No aircraft configuration found for flight");
+			return false;
+		}
+		String config = (String) results.get(0).get("ClassConfigurations");
+		System.out.println("DEBUG: Aircraft configuration: " + config);
+		
+		// Map full class names to their single-letter codes
+		Map<String, String> classNameToClassChar = new HashMap<>();
+		classNameToClassChar.put("Economy", "E");
+		classNameToClassChar.put("Business", "B");
+		classNameToClassChar.put("First", "F");
+		
+		// Get the single-letter code for the class
+		String classCode = classNameToClassChar.get(className);
+		System.out.println("DEBUG: Converting class name '" + className + "' to code '" + classCode + "'");
+		
+		if (classCode == null) {
+			System.out.println("DEBUG: Invalid class name: " + className);
+			return false;
+		}
+		
+		// Parse config string like "E:100,B:50,F:20"
+		int maxSeats = 0;
+		for (String part : config.split(",")) {
+			String[] keyValue = part.split(":");
+			if (keyValue[0].equals(classCode)) {
+				maxSeats = Integer.parseInt(keyValue[1]);
+				break;
+			}
+		}
+		System.out.println("DEBUG: Maximum seats for class " + className + ": " + maxSeats);
+		
+		// Now count how many actual tickets are sold in this class
+		sql = "SELECT COUNT(*) as taken " +
+			  "FROM Ticket " +
+			  "WHERE FlightID = ? AND Class = ?";
+		
+		results = executeQuery(sql, flightID, className);
+		int takenSeats = ((Number) results.get(0).get("taken")).intValue();
+		System.out.println("DEBUG: Currently taken seats: " + takenSeats);
+		
+		boolean hasSeats = takenSeats < maxSeats;
+		System.out.println("DEBUG: Has available seats: " + hasSeats + " (" + takenSeats + " < " + maxSeats + ")");
+		return hasSeats;
+	}
+	
+	/**
+	 * Adds a customer to the waiting list for a flight
+	 * @param customerID The customer to add
+	 * @param flightID The flight to wait for
+	 * @param className The class they want
+	 * @return true if successfully added to waitlist
+	 */
+	public boolean addToWaitlist(String customerID, int flightID, String className) {
+		String sql = "INSERT INTO WaitingList (CustomerID, FlightID, Class, RequestDateTime) " +
+					"VALUES (?, ?, ?, NOW())";
+		return executeUpdate(sql, customerID, flightID, className) > 0;
+	}
+	
+	/**
+	 * Creates a ticket for a flight
+	 * @param customerID The customer buying the ticket
+	 * @param flightID The flight to book
+	 * @param className The class to book
+	 * @param ticketFare The fare for the ticket
+	 * @return true if ticket was created successfully
+	 */
+	public boolean createTicket(String customerID, int flightID, String className, float ticketFare) {
+		String sql = "INSERT INTO Ticket (CustomerID, FlightID, SeatNumber, Class, TicketFare, BookingFee, PurchaseDateTime) " +
+					"VALUES (?, ?, ?, ?, ?, ?, NOW())";
+		
+		// Calculate booking fee based on class
+		float bookingFee = ("F".equals(className)) ? 15.00f : 0.00f;
+		
+		// Get next available seat number
+		int seatNumber = getNextSeatNumber(flightID);
+		
+		return executeUpdate(sql, customerID, flightID, seatNumber, className, ticketFare, bookingFee) > 0;
+	}
+	
+	/**
+	 * Gets the next available seat number for a flight
+	 */
+	private int getNextSeatNumber(int flightID) {
+		String sql = "SELECT COALESCE(MAX(SeatNumber), 0) + 1 as nextSeat " +
+					"FROM Ticket " +
+					"WHERE FlightID = ?";
+		List<Map<String, Object>> results = executeQuery(sql, flightID);
+		return ((Number) results.get(0).get("nextSeat")).intValue();
+	}
+
+	/**
+	 * Cancels a ticket for a customer
+	 * @param customerID The ID of the customer
+	 * @param flightId The ID of the flight
+	 * @param className The class of the ticket (B or F)
+	 * @return true if the ticket was cancelled successfully, false otherwise
+	 */
+	public boolean cancelTicket(String customerID, int flightId, String className) {
+		try {
+			// First check if the ticket exists
+			String checkQuery = "SELECT COUNT(*) FROM Ticket WHERE CustomerID = ? AND FlightID = ? AND Class = ?";
+			Connection conn = getConnection();
+			PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
+			checkStmt.setString(1, customerID);
+			checkStmt.setInt(2, flightId);
+			checkStmt.setString(3, className);
+			ResultSet rs = checkStmt.executeQuery();
+			
+			if (rs.next() && rs.getInt(1) > 0) {
+				// Delete the ticket
+				String deleteQuery = "DELETE FROM Ticket WHERE CustomerID = ? AND FlightID = ? AND Class = ?";
+				PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
+				deleteStmt.setString(1, customerID);
+				deleteStmt.setInt(2, flightId);
+				deleteStmt.setString(3, className);
+				
+				int rowsAffected = deleteStmt.executeUpdate();
+				return rowsAffected > 0;
+			}
+			return false;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	/**
+	 * Updates the status of an itinerary segment
+	 * @param flightPlanID The ID of the flight plan
+	 * @param flightId The ID of the flight
+	 * @param className The class of the ticket
+	 * @param status The new status (e.g., "Confirmed", "Waitlisted")
+	 * @return true if the update was successful
+	 */
+	public boolean updateItinerarySegmentStatus(String flightPlanID, int flightId, String className, String status) {
+		String sql = "UPDATE ItinerarySegment SET Status = ? WHERE FlightPlanID = ? AND FlightID = ? AND Class = ?";
+		try {
+			return executeUpdate(sql, status, flightPlanID, flightId, className) > 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
 
 }
