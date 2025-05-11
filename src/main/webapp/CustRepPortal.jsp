@@ -8,12 +8,12 @@
     <link rel="stylesheet" href="<%=request.getContextPath()%>/css/styles.css">
 </head>
 <body>
-	<jsp:include page="header.jsp" />
+    <jsp:include page="header.jsp" />
     <main class="main-content">
         <h1 class="page-title">Customer Representative Dashboard</h1>
-        
+
         <%
-       	if (request.getAttribute("airportDeleteError") != null) {
+        if (request.getAttribute("airportDeleteError") != null) {
         %>
         <span color="red"><%= request.getAttribute("airportDeleteError") %></span>
         <% } %>
@@ -47,16 +47,16 @@
                             <td><%=ap.get("numArriving")%></td>
                             <td><%=ap.get("numDeparting")%></td>
                             <td>
-                          	<form action="<%= request.getContextPath() %>/CustRep/editAirport"  method="get">
-                          		<input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>">
-								<button style="background-color: green;">Edit</button>
-                          	</form> 
-							</td>
+                                <form action="<%= request.getContextPath() %>/CustRep/editAirport"  method="get">
+                                    <input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>">
+                                    <button style="background-color: green;">Edit</button>
+                                </form>
+                            </td>
                             <td>
-                          	<form action="<%= request.getContextPath() %>/deleteAirport"  method="post">
-                          		<input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>">
-								<button style="background-color: red;">Delete</button>
-                          	</form> 
+                                <form action="<%= request.getContextPath() %>/deleteAirport"  method="post">
+                                    <input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>">
+                                    <button style="background-color: red;">Delete</button>
+                                </form>
                             </td>
                         </tr>
                         <% } %>
@@ -91,6 +91,47 @@
                 </table>
                 <% } else { %>
                 <p>No airlines found.</p>
+                <% } %>
+            </section>
+
+            <!-- New Flights section with waiting-list link -->
+            <section class="table-section">
+                <h2>Flights</h2>
+                <% List<Map<String,Object>> flights = (List<Map<String,Object>>)request.getAttribute("flights"); %>
+                <% if (flights != null && !flights.isEmpty()) { %>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flight ID</th>
+                            <th>Number</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Departure</th>
+                            <th>Arrival</th>
+                            <th>Waiting List</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% for (Map<String,Object> f : flights) { %>
+                        <tr>
+                            <td><%= f.get("FlightID") %></td>
+                            <td><%= f.get("FlightNumber") %></td>
+                            <td><%= f.get("FromAirportID") %></td>
+                            <td><%= f.get("ToAirportID") %></td>
+                            <td><%= f.get("DepartTime") %></td>
+                            <td><%= f.get("ArrivalTime") %></td>
+                            <td>
+                                <a href="<%=request.getContextPath()%>/CustRep/waitlist?flightId=<%=f.get("FlightID")%>"
+                                   class="btn btn-info">
+                                    View Waitlist
+                                </a>
+                            </td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+                <% } else { %>
+                <p>No flights available.</p>
                 <% } %>
             </section>
         </div>
@@ -138,7 +179,7 @@
                 </div>
                 <div class="form-group">
                     <label for="operatingDays">Operating Days</label>
-                    <input type="text" id="operatingDays" name="OperatingDays" maxlength="10" pattern="[A-Za-z0-9,\- ]{1,10}"/>
+                    <input type="text" id="operatingDays" name="OperatingDays" maxlength="10" pattern="[A-Za-z0-9,\\- ]{1,10}"/>
                 </div>
                 <div class="submit-row">
                     <button type="submit" class="btn-green">Create Flight</button>
@@ -207,6 +248,7 @@
                 <div id="airportError" class="error-banner" style="display:none;"></div>
             </form>
         </div>
+
     </main>
 
     <script>
@@ -234,22 +276,28 @@
             el.style.display = 'none'; return true;
         }
     </script>
-    
-    
-    
+
     <!-- This code focuses on browsing question as a customer rep -->
     <a href="${pageContext.request.contextPath}/ListQuestions">🔎 View all customer questions</a>
-    
-    
+
     <!-- Search form for reps -->
-<section class="search-questions">
-  <form action="${pageContext.request.contextPath}/SearchQuestions" method="get">
-    <label for="searchQ">Search Q&A:</label>
-    <input type="text" id="searchQ" name="q" placeholder="keyword…">
-    <button type="submit">🔎</button>
-  </form>
+    <section class="search-questions">
+      <form action="${pageContext.request.contextPath}/SearchQuestions" method="get">
+        <label for="searchQ">Search Q&A:</label>
+        <input type="text" id="searchQ" name="q" placeholder="keyword…">
+        <button type="submit">🔎</button>
+      </form>
+    </section>
+    
+    
+    <section class="table-section">
+  <h2>Reservations</h2>
+  <a href="${pageContext.request.contextPath}/CustRep/reservations"
+     class="btn btn-blue">
+    Manage Customer Reservations
+  </a>
 </section>
     
-    
+
 </body>
 </html>

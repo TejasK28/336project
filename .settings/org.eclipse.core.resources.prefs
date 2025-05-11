@@ -1,4 +1,7 @@
 eclipse.preferences.version=1
+encoding//src/main/webapp/ListReservations.jsp=UTF-8
+encoding//src/main/webapp/ReservationForm.jsp=UTF-8
+encoding//src/main/webapp/Waitlist.jsp=UTF-8
 encoding//src/main/webapp/listQuestions.jsp=UTF-8
 encoding//src/main/webapp/myQuestions.jsp=UTF-8
 encoding//src/main/webapp/viewQuestion.jsp=UTF-8

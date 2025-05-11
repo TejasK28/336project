@@ -1,4 +1,4 @@
-import java.math.BigDecimal;
+import java.math.BigDecimal; 
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 public class MySQL {
 
@@ -1441,6 +1443,239 @@ return false;
 }
 }
 
+
+	
+	
+	/**
+	 * Fetch one aircraft by its primary key.
+	 */
+	public Map<String,Object> getAircraftByID(String aircraftID) {
+		String sql =
+				  "SELECT AircraftID, AirlineID, TotalSeats, Model, " +
+				  "       ClassConfigurations AS Config " +
+				  "  FROM Aircraft " +
+				  " WHERE AircraftID = ?";
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setString(1, aircraftID);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                Map<String,Object> m = new HashMap<>();
+	                m.put("AircraftID", rs.getString("AircraftID"));
+	                m.put("AirlineID",  rs.getInt   ("AirlineID"));
+	                m.put("Model",      rs.getString("Model"));
+	                m.put("TotalSeats", rs.getInt   ("TotalSeats"));
+	                m.put("Config",     rs.getString("Config"));
+	                return m;
+	            }
+	        }
+	    } catch (SQLException e) { 
+	        e.printStackTrace();    
+	    }
+	    return null;
+	}
+	
+	
+	// Change signature to accept a new int aircraftId
+	public boolean updateFlight(int flightId,
+	                            int flightNumber,
+	                            int airlineId,
+	                            String fromAirport,
+	                            String toAirport,
+	                            LocalDateTime depart,
+	                            LocalDateTime arrive,
+	                            String operatingDays,
+	                            int aircraftId)               // NEW
+	{
+	    String sql =
+	        "UPDATE Flight SET "
+	      + " FlightNumber  = ?,"
+	      + " AirlineID     = ?,"
+	      + " FromAirportID = ?,"
+	      + " ToAirportID   = ?,"
+	      + " DepartTime    = ?,"
+	      + " ArrivalTime   = ?,"
+	      + " OperatingDays = ?,"
+	      + " AircraftID    = ? "                  // NEW
+	      + "WHERE FlightID = ?";
+
+	    try (Connection con = getConnection();
+	         PreparedStatement ps = con.prepareStatement(sql)) {
+	        ps.setInt(1, flightNumber);
+	        ps.setInt(2, airlineId);
+	        ps.setString(3, fromAirport);
+	        ps.setString(4, toAirport);
+	        ps.setObject(5, depart);
+	        ps.setObject(6, arrive);
+	        ps.setString(7, operatingDays);
+	        ps.setInt(8, aircraftId);            // NEW
+	        ps.setInt(9, flightId);
+	        return ps.executeUpdate() > 0;
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	
+	public List<Map<String, Object>> getAllAircrafts() {
+	    String sql = "SELECT AircraftID, AirlineID, Model, TotalSeats, ClassConfigurations FROM Aircraft";
+	    return executeQuery(sql);
+	}
+
+	/**
+	 * Gets the next available seat number for a flight
+	 */
+	private int getNextSeatNumber(int flightID) {
+		String sql = "SELECT COALESCE(MAX(SeatNumber), 0) + 1 as nextSeat " +
+					"FROM Ticket " +
+					"WHERE FlightID = ?";
+		List<Map<String, Object>> results = executeQuery(sql, flightID);
+		return ((Number) results.get(0).get("nextSeat")).intValue();
+	}
+
+	/**
+	 * Cancels a ticket for a customer
+	 * @param customerID The ID of the customer
+	 * @param flightId The ID of the flight
+	 * @param className The class of the ticket (B or F)
+	 * @return true if the ticket was cancelled successfully, false otherwise
+	 */
+// 	public boolean cancelTicket(String customerID, int flightId, String className) {
+// 		try {
+// 			// First check if the ticket exists
+// 			String checkQuery = "SELECT COUNT(*) FROM Ticket WHERE CustomerID = ? AND FlightID = ? AND Class = ?";
+// 			Connection conn = getConnection();
+// 			PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
+// 			checkStmt.setString(1, customerID);
+// 			checkStmt.setInt(2, flightId);
+// 			checkStmt.setString(3, className);
+// 			ResultSet rs = checkStmt.executeQuery();
+			
+// 			if (rs.next() && rs.getInt(1) > 0) {
+// 				// Delete the ticket
+// 				String deleteQuery = "DELETE FROM Ticket WHERE CustomerID = ? AND FlightID = ? AND Class = ?";
+// 				PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
+// 				deleteStmt.setString(1, customerID);
+// 				deleteStmt.setInt(2, flightId);
+// 				deleteStmt.setString(3, className);
+				
+// 				int rowsAffected = deleteStmt.executeUpdate();
+// 				return rowsAffected > 0;
+// 			}
+// 			return false;
+// 		} catch (SQLException e) {
+// 			e.printStackTrace();
+// 			return false;
+// 		}
+// 	}
+
+	/**
+	 * Updates the status of an itinerary segment
+	 * @param flightPlanID The ID of the flight plan
+	 * @param flightId The ID of the flight
+	 * @param className The class of the ticket
+	 * @param status The new status (e.g., "Confirmed", "Waitlisted")
+	 * @return true if the update was successful
+	 */
+	public boolean updateItinerarySegmentStatus(String flightPlanID, int flightId, String className, String status) {
+		String sql = "UPDATE ItinerarySegment SET Status = ? WHERE FlightPlanID = ? AND FlightID = ? AND Class = ?";
+		try {
+			return executeUpdate(sql, status, flightPlanID, flightId, className) > 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	
+	public List<Map<String,Object>> getWaitingListByFlight(int flightId) {
+	    String sql = 
+	      "SELECT wl.CustomerID, c.FirstName, c.LastName, " +
+	      "       wl.Class, wl.RequestDateTime " +
+	      "  FROM WaitingList wl " +
+	      "  JOIN Customer c ON wl.CustomerID = c.CustomerID " +
+	      " WHERE wl.FlightID = ?";
+	    return executeQuery(sql, flightId);
+	}
+	
+	
+	/**
+	 * Make a reservation (ticket) for a customer.
+	 */
+	public boolean createReservation(
+	    String     customerID,
+	    int        flightID,
+	    String     travelClass,
+	    BigDecimal fare
+	) {
+	    String sql = """
+	      INSERT INTO Ticket
+	        (CustomerID, FlightID, SeatNumber, Class, TicketFare, BookingFee, PurchaseDateTime)
+	      VALUES (?,?,?,?,?,?,NOW())
+	    """;
+	    // booking fee only for First
+	    BigDecimal bookingFee = "First".equals(travelClass)
+	        ? new BigDecimal("15.00")
+	        : BigDecimal.ZERO;
+
+	    return executeUpdate(sql,
+	        customerID,
+	        flightID,
+	        getNextSeatNumber(flightID),
+	        travelClass,
+	        fare,
+	        bookingFee
+	    ) > 0;
+	}
+
+	/**
+	 * List all reservations for a given customer.
+	 */
+	public List<Map<String,Object>> getReservationsForCustomer(String custId) {
+	    String sql = """
+	      SELECT
+	        t.FlightID,
+	        t.SeatNumber,
+	        t.Class,
+	        t.TicketFare,
+	        t.BookingFee,
+	        t.PurchaseDateTime,
+	        f.FlightNumber,
+	        f.FromAirportID,
+	        f.ToAirportID,
+	        a.Name AS AirlineName
+	      FROM Ticket t
+	      JOIN Flight  f ON t.FlightID = f.FlightID
+	      JOIN Airline a ON f.AirlineID = a.AirlineID
+	      WHERE t.CustomerID = ?
+	      ORDER BY t.PurchaseDateTime DESC
+	    """;
+	    return executeQuery(sql, custId);
+	}
+
+	/**
+	 * Update an existing reservation.  For simplicity we delete+re-insert
+	 * (so seat numbers get re-assigned), but you could do a full UPDATE.
+	 */
+	public boolean updateReservation(
+	    String     customerID,
+	    int        oldFlightID,
+	    int        oldSeatNumber,
+	    int        newFlightID,
+	    String     newClass,
+	    BigDecimal newFare
+	) {
+	    // delete old
+	    String del = "DELETE FROM Ticket WHERE CustomerID=? AND FlightID=? AND SeatNumber=?";
+	    if (executeUpdate(del, customerID, oldFlightID, oldSeatNumber) == 0) return false;
+	    // insert new
+	    return createReservation(customerID, newFlightID, newClass, newFare);
+	}
+
+
+
     
     
     /**
@@ -1624,5 +1859,6 @@ return false;
         String sql = "SELECT w.*, f.* FROM WaitingList w JOIN Flight f ON w.FlightID = f.FlightID WHERE w.CustomerID = ?";
         return executeQuery(sql, customerID);
     }
+
 
 }
