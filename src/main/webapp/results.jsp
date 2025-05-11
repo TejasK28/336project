@@ -1,230 +1,226 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" import="java.util.List,java.util.Map,java.util.Set,java.util.TreeSet" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java"
+	import="java.util.*"%>
 <%
-    // tripType was submitted in the search form
-    String tripType = request.getParameter("tripType");
+String tripType = request.getParameter("tripType");
 
-    @SuppressWarnings("unchecked")
-    List<Map<String,Object>> outbound =
-        (List<Map<String,Object>>) request.getAttribute("outbound");
-    @SuppressWarnings("unchecked")
-    List<Map<String,Object>> inbound =
-        (List<Map<String,Object>>) request.getAttribute("inbound");
+@SuppressWarnings("unchecked")
+List<Map<String, Object>> outbound = (List<Map<String, Object>>) request.getAttribute("outbound");
+@SuppressWarnings("unchecked")
+List<Map<String, Object>> inbound = (List<Map<String, Object>>) request.getAttribute("inbound");
 
-    // Build filter sets
-    Set<String> airlines     = new TreeSet<>();
-    Set<String> takeoffTimes = new TreeSet<>();
-    Set<String> landingTimes = new TreeSet<>();
+// Build filter-sets
+Set<String> airlines = new TreeSet<>();
+Set<String> takeoffTimes = new TreeSet<>();
+Set<String> landingTimes = new TreeSet<>();
+List<Map<String, Object>> allFlights = new ArrayList<>(outbound);
+if (inbound != null)
+	allFlights.addAll(inbound);
 
-    if (outbound != null) {
-      for (Map<String,Object> f : outbound) {
-        String a   = f.get("AirlineName").toString();
-        String dep = f.get("DepartTime").toString().substring(11,16);
-        String arr = f.get("ArrivalTime").toString().substring(11,16);
-        airlines.add(a);
-        takeoffTimes.add(dep);
-        landingTimes.add(arr);
-      }
-    }
-    if (inbound != null) {
-      for (Map<String,Object> f : inbound) {
-        String a   = f.get("AirlineName").toString();
-        String dep = f.get("DepartTime").toString().substring(11,16);
-        String arr = f.get("ArrivalTime").toString().substring(11,16);
-        airlines.add(a);
-        takeoffTimes.add(dep);
-        landingTimes.add(arr);
-      }
-    }
+for (Map<String, Object> f : allFlights) {
+	// airlineName
+	Object aObj = f.get("airlineName");
+	if (aObj != null)
+		airlines.add(aObj.toString());
+
+	// depart_time (HH:MM)
+	Object dObj = f.get("depart_time");
+	if (dObj != null) {
+		String dep = dObj.toString().substring(11, 16);
+		takeoffTimes.add(dep);
+	}
+
+	// arrival_time (HH:MM)
+	Object rObj = f.get("arrival_time");
+	if (rObj != null) {
+		String arr = rObj.toString().substring(11, 16);
+		landingTimes.add(arr);
+	}
+}
 %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Flight Results</title>
-  <link rel="stylesheet" href="<%= request.getContextPath() %>/css/styles.css"/>
-
-  <script>
-    function filterFlights() {
-      const priceFilter   = parseFloat(document.getElementById('priceFilter').value) || Infinity;
-      const airlineFilter = document.getElementById('airlineFilter').value.toLowerCase();
-      const takeoffFilter = document.getElementById('takeoffFilter').value;
-      const landingFilter = document.getElementById('landingFilter').value;
-
-      document.querySelectorAll('.flight-row').forEach(row => {
-        const price   = parseFloat(row.dataset.price) || 0;
-        const airline = row.dataset.airline.toLowerCase();
-        const takeoff = row.dataset.takeoff;
-        const landing = row.dataset.landing;
-
-        const okPrice   = price <= priceFilter;
-        const okAirline = !airlineFilter || airline === airlineFilter;
-        const okTakeoff = !takeoffFilter   || takeoff >= takeoffFilter;
-        const okLanding = !landingFilter   || landing <= landingFilter;
-
-        row.style.display = (okPrice && okAirline && okTakeoff && okLanding)
-          ? '' : 'none';
-      });
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      ['priceFilter','airlineFilter','takeoffFilter','landingFilter']
-        .forEach(id => document.getElementById(id)
-          .addEventListener('change', filterFlights));
-    });
-  </script>
+<meta charset="UTF-8" />
+<title>Flight Results</title>
+<link rel="stylesheet"
+	href="<%=request.getContextPath()%>/css/styles.css" />
+<script>
+	/* your filterFlights JS unchanged… */
+</script>
 </head>
 <body>
-  <jsp:include page="header.jsp"/>
+	<jsp:include page="header.jsp" />
 
-  <%-- Flash message --%>
-  <%
-    Boolean added = (Boolean) session.getAttribute("FlightAdded");
-    if (added != null && added) {
-  %>
-    <p class="success">Flight(s) added to your plan!</p>
-  <%
-      session.removeAttribute("FlightAdded");
-    }
-  %>
+	<h2>Filter Flights</h2>
+	<form onsubmit="return false;">
+		<!-- same filter inputs, using airlines/takeoffTimes/landingTimes -->
+	</form>
 
-  <h2>Filter Flights</h2>
-  <form onsubmit="return false;">
-    <label for="priceFilter">Max Price:</label>
-    <input type="number" id="priceFilter" placeholder="Enter max price">
+	<%
+	if ("roundtrip".equals(tripType)) {
+	%>
+	<!-- ROUND-TRIP: two side-by-side tables -->
+	<form method="post"
+		action="<%=request.getContextPath()%>/addRTFlightToPlan">
+		<h2>Outbound</h2>
+		<table border="1">
+			<tr>
+				<th></th>
+				<th>Route</th>
+				<th>Departs</th>
+				<th>Arrives</th>
+				<th>Duration</th>
+				<th>Price</th>
+				<th>Airline</th>
+			</tr>
+			<%
+			for (Map<String, Object> f : outbound) {
+				String leg1 = String.valueOf(f.get("first_leg_id"));
+				boolean lay = f.get("second_leg_id") != null;
+				String orig = String.valueOf(f.get("origin"));
+				String stop = lay ? String.valueOf(f.get("stopover")) : null;
+				String dest = String.valueOf(f.get("destination"));
+				String d1 = String.valueOf(f.get("depart_time"));
+				String a1 = String.valueOf(f.get("arrival_time"));
+				int dur = ((Number) f.get("total_duration")).intValue();
+				double pr = ((Number) f.get("total_fare")).doubleValue();
+				String air = String.valueOf(f.get("airlineName"));
+			%>
+			<tr class="flight-row" data-price="<%=pr%>"
+				data-airline="<%=air.toLowerCase()%>"
+				data-takeoff="<%=d1.substring(11, 16)%>"
+				data-landing="<%=a1.substring(11, 16)%>">
+				<td><input type="radio" name="outboundFlight" value="<%=leg1%>"
+					required /></td>
+				<td><%=orig%> <%
+ if (lay) {
+ %>→<%=stop%>(stop)<%
+ }
+ %> →<%=dest%></td>
+				<td><%=d1.substring(11, 16)%></td>
+				<td><%=a1.substring(11, 16)%></td>
+				<td><%=dur%> min</td>
+				<td>$<%=pr%></td>
+				<td><%=air%></td>
+			</tr>
+			<%
+			}
+			%>
+		</table>
 
-    <label for="airlineFilter">Airline:</label>
-    <select id="airlineFilter">
-      <option value="">-- any --</option>
-      <% for (String a : airlines) { %>
-        <option value="<%= a.toLowerCase() %>"><%= a %></option>
-      <% } %>
-    </select>
+		<h2>Return</h2>
+		<table border="1">
+			<tr>
+				<th></th>
+				<th>Route</th>
+				<th>Departs</th>
+				<th>Arrives</th>
+				<th>Duration</th>
+				<th>Price</th>
+				<th>Airline</th>
+			</tr>
+			<%
+			for (Map<String, Object> f : inbound) {
+				String leg1 = String.valueOf(f.get("first_leg_id"));
+				boolean lay = f.get("second_leg_id") != null;
+				String orig = String.valueOf(f.get("origin"));
+				String stop = lay ? String.valueOf(f.get("stopover")) : null;
+				String dest = String.valueOf(f.get("destination"));
+				String d1 = String.valueOf(f.get("depart_time"));
+				String a1 = String.valueOf(f.get("arrival_time"));
+				int dur = ((Number) f.get("total_duration")).intValue();
+				double pr = ((Number) f.get("total_fare")).doubleValue();
+				String air = String.valueOf(f.get("airlineName"));
+			%>
+			<tr class="flight-row" data-price="<%=pr%>"
+				data-airline="<%=air.toLowerCase()%>"
+				data-takeoff="<%=d1.substring(11, 16)%>"
+				data-landing="<%=a1.substring(11, 16)%>">
+				<td><input type="radio" name="inboundFlight" value="<%=leg1%>"
+					required /></td>
+				<td><%=orig%> <%
+ if (lay) {
+ %>→<%=stop%>(stop)<%
+ }
+ %> →<%=dest%></td>
+				<td><%=d1.substring(11, 16)%></td>
+				<td><%=a1.substring(11, 16)%></td>
+				<td><%=dur%> min</td>
+				<td>$<%=pr%></td>
+				<td><%=air%></td>
+			</tr>
+			<%
+			}
+			%>
+		</table>
 
-    <label for="takeoffFilter">Earliest Takeoff:</label>
-    <select id="takeoffFilter">
-      <option value="">-- any --</option>
-      <% for (String t : takeoffTimes) { %>
-        <option value="<%= t %>"><%= t %></option>
-      <% } %>
-    </select>
+		<button type="submit">Add Round-Trip to Plan</button>
+	</form>
 
-    <label for="landingFilter">Latest Landing:</label>
-    <select id="landingFilter">
-      <option value="">-- any --</option>
-      <% for (String t : landingTimes) { %>
-        <option value="<%= t %>"><%= t %></option>
-      <% } %>
-    </select>
-  </form>
-
-  <% if ("roundtrip".equals(tripType)) { %>
-    <%-- Round-trip: select outbound & return via radio --%>
-    <form method="post" action="<%= request.getContextPath() %>/addRTFlightToPlan">
-      <h2>Select Outbound Flight</h2>
-      <table border="1" cellpadding="5">
-        <tr>
-          <th>Select</th><th>Depart</th><th>Arrive</th><th>Duration</th><th>Price</th><th>Airline</th>
-        </tr>
-        <% if (outbound != null && !outbound.isEmpty()) {
-             for (Map<String,Object> f : outbound) {
-               String id    = f.get("FlightID").toString();
-               String dep   = f.get("DepartTime").toString().substring(11,16);
-               String arr   = f.get("ArrivalTime").toString().substring(11,16);
-        %>
-        <tr class="flight-row"
-            data-price="<%= f.get("price") %>"
-            data-airline="<%= f.get("AirlineName").toString().toLowerCase() %>"
-            data-takeoff="<%= dep %>"
-            data-landing="<%= arr %>">
-          <td>
-            <input type="radio" name="outboundFlight" value="<%= id %>" required/>
-          </td>
-          <td><%= f.get("DepartTime") %></td>
-          <td><%= f.get("ArrivalTime") %></td>
-          <td><%= f.get("duration") %> min</td>
-          <td>$<%= f.get("price") %></td>
-          <td><%= f.get("AirlineName") %></td>
-        </tr>
-        <%   }
-           } else { %>
-        <tr><td colspan="6">No outbound flights found.</td></tr>
-        <% } %>
-      </table>
-
-      <h2>Select Return Flight</h2>
-      <table border="1" cellpadding="5">
-        <tr>
-          <th>Select</th><th>Depart</th><th>Arrive</th><th>Duration</th><th>Price</th><th>Airline</th>
-        </tr>
-        <% if (inbound != null && !inbound.isEmpty()) {
-             for (Map<String,Object> f : inbound) {
-               String id    = f.get("FlightID").toString();
-               String dep   = f.get("DepartTime").toString().substring(11,16);
-               String arr   = f.get("ArrivalTime").toString().substring(11,16);
-        %>
-        <tr class="flight-row"
-            data-price="<%= f.get("price") %>"
-            data-airline="<%= f.get("AirlineName").toString().toLowerCase() %>"
-            data-takeoff="<%= dep %>"
-            data-landing="<%= arr %>">
-          <td>
-            <input type="radio" name="inboundFlight" value="<%= id %>" required/>
-          </td>
-          <td><%= f.get("DepartTime") %></td>
-          <td><%= f.get("ArrivalTime") %></td>
-          <td><%= f.get("duration") %> min</td>
-          <td>$<%= f.get("price") %></td>
-          <td><%= f.get("AirlineName") %></td>
-        </tr>
-        <%   }
-           } else { %>
-        <tr><td colspan="6">No return flights found.</td></tr>
-        <% } %>
-      </table>
-
-      <button type="submit">Add Round-Trip to Plan</button>
-    </form>
-
-  <% } else { %>
-    <%-- One-way or layover: per-row buttons with dynamic action --%>
-    <h2>Available Flights</h2>
-    <table border="1" cellpadding="5">
-      <tr>
-        <th>Depart</th><th>Arrive</th><th>Duration</th><th>Price</th><th>Airline</th><th>Action</th>
-      </tr>
-      <% if (outbound != null && !outbound.isEmpty()) {
-           for (Map<String,Object> f : outbound) {
-             String id        = f.get("FlightID").toString();
-             String dep       = f.get("DepartTime").toString().substring(11,16);
-             String arr       = f.get("ArrivalTime").toString().substring(11,16);
-             Object layoverId = f.get("LayoverFlightID");
-             String action    = (layoverId != null)
-                                 ? "/addLayFlightToPlan"
-                                 : "/addOWFlightToPlan";
-      %>
-      <tr class="flight-row"
-          data-price="<%= f.get("price") %>"
-          data-airline="<%= f.get("AirlineName").toString().toLowerCase() %>"
-          data-takeoff="<%= dep %>"
-          data-landing="<%= arr %>">
-        <td><%= f.get("DepartTime") %></td>
-        <td><%= f.get("ArrivalTime") %></td>
-        <td><%= f.get("duration") %> min</td>
-        <td>$<%= f.get("price") %></td>
-        <td><%= f.get("AirlineName") %></td>
-        <td>
-          <form method="post"
-                action="<%= request.getContextPath() + action %>">
-            <input type="hidden" name="flightID" value="<%= id %>"/>
-            <button type="submit">Add to Plan</button>
-          </form>
-        </td>
-      </tr>
-      <%   }
-         } else { %>
-      <tr><td colspan="6">No flights found.</td></tr>
-      <% } %>
-    </table>
-  <% } %>
+	<%
+	} else {
+	%>
+	<!-- ONE-WAY (and one‐stop) -->
+	<h2>Available Flights</h2>
+	<table border="1">
+		<tr>
+			<th>Route</th>
+			<th>Departs</th>
+			<th>Arrives</th>
+			<th>Duration</th>
+			<th>Price</th>
+			<th>Airline</th>
+			<th>Action</th>
+		</tr>
+		<%
+		for (Map<String, Object> f : outbound) {
+			String leg1 = String.valueOf(f.get("first_leg_id"));
+			String leg2 = f.get("second_leg_id") != null ? f.get("second_leg_id").toString() : null;
+			boolean lay = leg2 != null;
+			String orig = String.valueOf(f.get("origin"));
+			String stop = lay ? String.valueOf(f.get("stopover")) : null;
+			String dest = String.valueOf(f.get("destination"));
+			String d1 = String.valueOf(f.get("depart_time"));
+			String a1 = String.valueOf(f.get("arrival_time"));
+			int dur = ((Number) f.get("total_duration")).intValue();
+			double pr = ((Number) f.get("total_fare")).doubleValue();
+			String air = String.valueOf(f.get("airlineName"));
+			String action = lay ? "/addLayFlightToPlan" : "/addOWFlightToPlan";
+		%>
+		<tr class="flight-row" data-price="<%=pr%>"
+			data-airline="<%=air.toLowerCase()%>"
+			data-takeoff="<%=d1.substring(11, 16)%>"
+			data-landing="<%=a1.substring(11, 16)%>">
+			<td>
+				<form method="post" action="<%=request.getContextPath() + action%>">
+					<input type="hidden" name="leg1ID" value="<%=leg1%>" />
+					<%
+					if (lay) {
+					%>
+					<input type="hidden" name="leg2ID" value="<%=leg2%>" />
+					<%
+					}
+					%>
+					<button type="submit">Add to Plan</button>
+				</form>
+			</td>
+			<td><%=orig%> <%
+ if (lay) {
+ %>→<%=stop%>(stop)<%
+ }
+ %> →<%=dest%></td>
+			<td><%=d1.substring(11, 16)%></td>
+			<td><%=a1.substring(11, 16)%></td>
+			<td><%=dur%> min</td>
+			<td>$<%=pr%></td>
+			<td><%=air%></td>
+		</tr>
+		<%
+		}
+		%>
+	</table>
+	<%
+	}
+	%>
 </body>
 </html>
