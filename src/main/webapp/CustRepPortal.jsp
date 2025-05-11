@@ -85,7 +85,7 @@
                         <tr>
                             <td><a href="<%= request.getContextPath() + "/CustRep/airline?airlineId=" + al.get("AirlineID")%>"><%=al.get("Name")%></a></td>
                             <td><%=al.get("numSchedFlights")%></td>
-                            <td><%=al.get("numOwnedAircrafts")%></td>
+                            <td><%=al.get("numOwnedAircrafts")%></td> 
                         </tr>
                         <% } %>
                     </tbody>
