@@ -1597,7 +1597,7 @@ return false;
                     "JOIN Airline a ON f.AirlineID = a.AirlineID " +
                     "JOIN Airport dep ON f.FromAirportID = dep.AirportID " +
                     "JOIN Airport arr ON f.ToAirportID = arr.AirportID " +
-                    "WHERE f.DepartTime < NOW() " +
+                    "WHERE f.DepartTime < NOW() " + 
                     "AND t.CustomerID = ? " +
                     "ORDER BY f.DepartTime DESC";
         return executeQuery(sql, customerID);
