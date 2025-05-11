@@ -72,6 +72,8 @@ public class Login extends HttpServlet {
 			    request.setAttribute("flightPlanResults", flights);
 			}
 			
+			String uname = (String) request.getSession().getAttribute("uname");
+			request.setAttribute("reservedFlightPlans", db.getUserFlightPlans(uname));
 			
 			
 			
