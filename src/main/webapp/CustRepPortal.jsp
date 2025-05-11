@@ -288,6 +288,16 @@
         <button type="submit">🔎</button>
       </form>
     </section>
+    
+    
+    <section class="table-section">
+  <h2>Reservations</h2>
+  <a href="${pageContext.request.contextPath}/CustRep/reservations"
+     class="btn btn-blue">
+    Manage Customer Reservations
+  </a>
+</section>
+    
 
 </body>
 </html>

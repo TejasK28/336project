@@ -1,4 +1,4 @@
-import java.math.BigDecimal;
+import java.math.BigDecimal; 
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.math.BigDecimal;
+import java.sql.Timestamp;
 
 public class MySQL {
 
@@ -1588,6 +1590,81 @@ return false;
 	      " WHERE wl.FlightID = ?";
 	    return executeQuery(sql, flightId);
 	}
+	
+	
+	/**
+	 * Make a reservation (ticket) for a customer.
+	 */
+	public boolean createReservation(
+	    String     customerID,
+	    int        flightID,
+	    String     travelClass,
+	    BigDecimal fare
+	) {
+	    String sql = """
+	      INSERT INTO Ticket
+	        (CustomerID, FlightID, SeatNumber, Class, TicketFare, BookingFee, PurchaseDateTime)
+	      VALUES (?,?,?,?,?,?,NOW())
+	    """;
+	    // booking fee only for First
+	    BigDecimal bookingFee = "First".equals(travelClass)
+	        ? new BigDecimal("15.00")
+	        : BigDecimal.ZERO;
+
+	    return executeUpdate(sql,
+	        customerID,
+	        flightID,
+	        getNextSeatNumber(flightID),
+	        travelClass,
+	        fare,
+	        bookingFee
+	    ) > 0;
+	}
+
+	/**
+	 * List all reservations for a given customer.
+	 */
+	public List<Map<String,Object>> getReservationsForCustomer(String custId) {
+	    String sql = """
+	      SELECT
+	        t.FlightID,
+	        t.SeatNumber,
+	        t.Class,
+	        t.TicketFare,
+	        t.BookingFee,
+	        t.PurchaseDateTime,
+	        f.FlightNumber,
+	        f.FromAirportID,
+	        f.ToAirportID,
+	        a.Name AS AirlineName
+	      FROM Ticket t
+	      JOIN Flight  f ON t.FlightID = f.FlightID
+	      JOIN Airline a ON f.AirlineID = a.AirlineID
+	      WHERE t.CustomerID = ?
+	      ORDER BY t.PurchaseDateTime DESC
+	    """;
+	    return executeQuery(sql, custId);
+	}
+
+	/**
+	 * Update an existing reservation.  For simplicity we delete+re-insert
+	 * (so seat numbers get re-assigned), but you could do a full UPDATE.
+	 */
+	public boolean updateReservation(
+	    String     customerID,
+	    int        oldFlightID,
+	    int        oldSeatNumber,
+	    int        newFlightID,
+	    String     newClass,
+	    BigDecimal newFare
+	) {
+	    // delete old
+	    String del = "DELETE FROM Ticket WHERE CustomerID=? AND FlightID=? AND SeatNumber=?";
+	    if (executeUpdate(del, customerID, oldFlightID, oldSeatNumber) == 0) return false;
+	    // insert new
+	    return createReservation(customerID, newFlightID, newClass, newFare);
+	}
+
 
 
 }

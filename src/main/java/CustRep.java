@@ -18,10 +18,18 @@ import java.util.Map;
  * Servlet implementation class CustRep
  */
 @WebServlet({
-    "/CustRep/*",
-    "/createFlight",  "/createAircraft",  "/createAirport",
-    "/deleteFlight",  "/deleteAirport",
-    "/editFlight",    "/editAirport",    "/editAircraft",   "/deleteAircraft"
+    "/CustRep",                   // dashboard
+    "/CustRep/airport/*",         // view flights at one airport
+    "/CustRep/editFlight",
+    "/CustRep/editAirport",
+    "/CustRep/airline",
+    "/CustRep/editAircraft",
+    "/CustRep/deleteFlight",
+    "/CustRep/deleteAirport",
+    "/CustRep/deleteAircraft",
+    "/createFlight",
+    "/createAircraft",
+    "/createAirport"
 })
 
 public class CustRep extends HttpServlet {
