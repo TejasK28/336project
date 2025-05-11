@@ -49,10 +49,10 @@ public class CustRep extends HttpServlet {
         // 1) Dashboard
         if ("/CustRep".equals(servletPath) && pathInfo == null) {
             List<Map<String,Object>> airports = db.getAllAirports();
-            for (Map<String,Object> ap : airports) {
-                ap.put("numArriving",  db.getNumArrivingFlightsByAirportID((String)ap.get("AirportID")));
-                ap.put("numDeparting", db.getNumDepartingFlightByAirportID((String)ap.get("AirportID")));
-            }
+            // for (Map<String,Object> ap : airports) {
+            //     ap.put("numArriving",  db.getNumArrivingFlightsByAirportID((String)ap.get("AirportID")));
+            //     ap.put("numDeparting", db.getNumDepartingFlightByAirportID((String)ap.get("AirportID")));
+            // }
             request.setAttribute("airports", airports);
             request.setAttribute("airlines", db.getAllAirlines());
             request.setAttribute("flights",  db.getAllFlights());
