@@ -125,12 +125,143 @@
     }
 %>
 
-	
+<!-- Scheduled Flights Table -->
+<h2>Scheduled Flights</h2>
+<table border="1" cellpadding="5" cellspacing="0">
+  <tr>
+    <th>Flight Number</th>
+    <th>Airline</th>
+    <th>From</th>
+    <th>To</th>
+    <th>Departure</th>
+    <th>Arrival</th>
+    <th>Duration</th>
+    <th>Class</th>
+    <th>Price</th>
+  </tr>
+  <%
+  @SuppressWarnings("unchecked")
+  List<Map<String, Object>> scheduledFlights = (List<Map<String, Object>>) request.getAttribute("scheduledFlights");
+  if (scheduledFlights != null && !scheduledFlights.isEmpty()) {
+    for (Map<String, Object> flight : scheduledFlights) {
+  %>
+  <tr>
+    <td><%= flight.get("FlightNumber") %></td>
+    <td><%= flight.get("airline_name") %></td>
+    <td><%= flight.get("departure_airport") %> (<%= flight.get("departure_city") %>, <%= flight.get("departure_country") %>)</td>
+    <td><%= flight.get("arrival_airport") %> (<%= flight.get("arrival_city") %>, <%= flight.get("arrival_country") %>)</td>
+    <td><%= flight.get("DepartTime") %></td>
+    <td><%= flight.get("ArrivalTime") %></td>
+    <td><%= flight.get("Duration") %> minutes</td>
+    <td><%= flight.get("Class") %></td>
+    <td>$<%= flight.get("StandardFare") %></td>
+  </tr>
+  <%
+    }
+  } else {
+  %>
+  <tr>
+    <td colspan="9" style="text-align: center;">No scheduled flights found.</td>
+  </tr>
+  <%
+  }
+  %>
+</table>
 
-	<a href="<%=request.getContextPath()%>/SearchFlightsServlet">Search
-		flights!</a>
-	<!-- This section focuses on the first 6 bullet points of user functionality -->
+<!-- Past Flights Table -->
+<h2>Past Flights</h2>
+<table border="1" cellpadding="5" cellspacing="0">
+  <tr>
+    <th>Flight Number</th>
+    <th>Airline</th>
+    <th>From</th>
+    <th>To</th>
+    <th>Departure</th>
+    <th>Arrival</th>
+    <th>Duration</th>
+    <th>Class</th>
+    <th>Price</th>
+  </tr>
+  <%
+  @SuppressWarnings("unchecked")
+  List<Map<String, Object>> pastFlights = (List<Map<String, Object>>) request.getAttribute("pastFlights");
+  if (pastFlights != null && !pastFlights.isEmpty()) {
+    for (Map<String, Object> flight : pastFlights) {
+  %>
+  <tr>
+    <td><%= flight.get("FlightNumber") %></td>
+    <td><%= flight.get("airline_name") %></td>
+    <td><%= flight.get("departure_airport") %> (<%= flight.get("departure_city") %>, <%= flight.get("departure_country") %>)</td>
+    <td><%= flight.get("arrival_airport") %> (<%= flight.get("arrival_city") %>, <%= flight.get("arrival_country") %>)</td>
+    <td><%= flight.get("DepartTime") %></td>
+    <td><%= flight.get("ArrivalTime") %></td>
+    <td><%= flight.get("Duration") %> minutes</td>
+    <td><%= flight.get("Class") %></td>
+    <td>$<%= flight.get("StandardFare") %></td>
+  </tr>
+  <%
+    }
+  } else {
+  %>
+  <tr>
+    <td colspan="9" style="text-align: center;">No past flights found.</td>
+  </tr>
+  <%
+  }
+  %>
+</table>
 
+<h2>Waitlisted Flights</h2>
+<table border="1">
+    <tr>
+        <th>Flight Number</th>
+        <th>Airline</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Departure</th>
+        <th>Arrival</th>
+        <th>Duration</th>
+        <th>Class</th>
+        <th>Price</th>
+    </tr>
+    <% 
+    List<Map<String, Object>> waitlistedFlights = (List<Map<String, Object>>) request.getAttribute("waitlistedFlights");
+    if (waitlistedFlights != null && !waitlistedFlights.isEmpty()) {
+        for (Map<String, Object> flight : waitlistedFlights) { %>
+            <tr>
+                <td><%= flight.get("FlightNumber") %></td>
+                <td><%= flight.get("AirlineName") %></td>
+                <td><%= flight.get("FromAirportID") %></td>
+                <td><%= flight.get("ToAirportID") %></td>
+                <td><%= flight.get("DepartureTime") %></td>
+                <td><%= flight.get("ArrivalTime") %></td>
+                <td><%= flight.get("Duration") %></td>
+                <td><%= flight.get("Class") %></td>
+                <td><%= flight.get("Price") %></td>
+            </tr>
+        <% }
+    } else { %>
+        <tr>
+            <td colspan="9">No waitlisted flights found.</td>
+        </tr>
+    <% } %>
+</table>
+
+<div class="search-flights-container" style="text-align: center; margin: 30px 0;">
+  <a href="<%=request.getContextPath()%>/SearchFlightsServlet" 
+     style="display: inline-block;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+    Search Flights
+  </a>
+</div>
 
 <p>
   <a href="<%=request.getContextPath()%>/MyQuestions">

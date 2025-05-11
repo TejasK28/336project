@@ -32,7 +32,7 @@ public class CancelTicket extends HttpServlet {
             String className = request.getParameter("className");
 
             // Check if the ticket is Business or First class
-            if (!"B".equals(className) && !"F".equals(className)) {
+            if (!"Business".equals(className) && !"First".equals(className)) {
                 request.setAttribute("error", "Only Business and First class tickets can be cancelled");
                 response.sendRedirect(request.getContextPath() + "/ViewFlightPlan/" + request.getParameter("flightPlanID"));
                 return;
