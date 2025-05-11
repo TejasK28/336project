@@ -126,10 +126,23 @@
                value="<%=flight.get("OperatingDays")%>" />
     </div>
 
-    <div class="submit-row">
-        <button type="submit" class="btn btn-save">Save Changes</button>
+        <div class="submit-row">
+        <button 
+            type="submit" 
+            style="
+              background-color: #007bff;
+              color: #fff;
+              border: none;
+              border-radius: 4px;
+              padding: 8px 16px;
+              font-size: 1rem;
+              cursor: pointer;
+            ">
+          Save Changes
+        </button>
         <a href="<%=request.getContextPath()%>/CustRep" class="btn btn-revert">Cancel</a>
     </div>
+
     
     
   
