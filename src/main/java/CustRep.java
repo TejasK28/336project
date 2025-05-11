@@ -24,7 +24,8 @@ import java.util.Map;
     "/CustRep/deleteAircraft",
     "/createFlight",
     "/createAircraft",
-    "/createAirport"
+    "/createAirport",
+    "/CustRep/waitlist"
 })
 public class CustRep extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -43,8 +44,8 @@ public class CustRep extends HttpServlet {
         }
 
         MySQL db = new MySQL();
-        String servletPath = request.getServletPath(); // e.g. "/CustRep" or "/CustRep/airport"
-        String pathInfo    = request.getPathInfo();    // e.g. null or "/AMS"
+        String servletPath = request.getServletPath(); // e.g. "/CustRep" or "/CustRep/waitlist"
+        String pathInfo    = request.getPathInfo();    // e.g. "/AMS"
 
         // 1) Dashboard
         if ("/CustRep".equals(servletPath) && pathInfo == null) {
@@ -56,7 +57,7 @@ public class CustRep extends HttpServlet {
             request.setAttribute("airports", airports);
             request.setAttribute("airlines", db.getAllAirlines());
             request.setAttribute("flights",  db.getAllFlights());
-            RequestDispatcher rd = request.getRequestDispatcher("CustRepPortal.jsp");
+            RequestDispatcher rd = request.getRequestDispatcher("/CustRepPortal.jsp");
             rd.forward(request, response);
             return;
         }
@@ -65,8 +66,7 @@ public class CustRep extends HttpServlet {
         if ("/CustRep/airport".equals(servletPath) && pathInfo != null) {
             String airportId = pathInfo.substring(1);  // drop leading '/'
             request.setAttribute("airport_flights", db.getFlightsAtAirport(airportId));
-            RequestDispatcher rd = request.getRequestDispatcher("/Airport.jsp");
-            rd.forward(request, response);
+            request.getRequestDispatcher("/Airport.jsp").forward(request, response);
             return;
         }
 
@@ -107,19 +107,17 @@ public class CustRep extends HttpServlet {
         }
 
         // 7) View Waitlist
-        if ("/CustRep".equals(servletPath) && pathInfo != null && pathInfo.startsWith("/waitlist")) {
+        if ("/CustRep/waitlist".equals(servletPath)) {
             int fid = Integer.parseInt(request.getParameter("flightId"));
-            request.setAttribute("waitlist",  db.getWaitingListByFlight(fid));
-            request.setAttribute("flightId",  fid);
+            request.setAttribute("waitlist", db.getWaitingListByFlight(fid));
+            request.setAttribute("flightId", fid);
             request.getRequestDispatcher("/Waitlist.jsp").forward(request, response);
             return;
         }
 
         // If no GET mapping matched
-        response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                "GET method is not allowed on this route.");
-    }
-
+        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    }   
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

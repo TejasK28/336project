@@ -13,12 +13,14 @@
     <label>Customer:
       <select name="customerId" onchange="this.form.submit()">
         <option value="">-- select --</option>
-        <% 
-           List<Map<String,Object>> customers = (List<Map<String,Object>>)request.getAttribute("customers");
-           String selected = (String)request.getAttribute("selectedCustomerId");
-           for (Map<String,Object> c : customers) {
-             String id   = (String)c.get("CustomerID");
-             String name = c.get("FirstName") + " " + c.get("LastName");
+        <%
+          @SuppressWarnings("unchecked")
+          List<Map<String,Object>> customers =
+              (List<Map<String,Object>>) request.getAttribute("customers");
+          String selected = (String) request.getAttribute("selectedCustomerId");
+          for (Map<String,Object> c : customers) {
+            String id   = (String) c.get("CustomerID");
+            String name = c.get("FirstName") + " " + c.get("LastName");
         %>
           <option value="<%=id%>" <%= id.equals(selected) ? "selected" : "" %>>
             <%= name %> (<%= id %>)
@@ -30,7 +32,9 @@
 
   <!-- 2) show their reservations -->
   <%
-    List<Map<String,Object>> res = (List<Map<String,Object>>)request.getAttribute("reservations");
+    @SuppressWarnings("unchecked")
+    List<Map<String,Object>> res =
+        (List<Map<String,Object>>) request.getAttribute("reservations");
     if (res != null && !res.isEmpty()) {
   %>
     <table border="1" cellpadding="4">
@@ -43,15 +47,15 @@
         <th>Edit</th>
       </tr>
       <% for (Map<String,Object> t : res) {
-           int    fnum   = ((Number)t.get("FlightNumber")).intValue();
-           String from   = (String)t.get("FromAirportID");
-           String to     = (String)t.get("ToAirportID");
-           String airline= (String)t.get("AirlineName");
-           String cls    = (String)t.get("Class");
-           Object fareO  = t.get("TicketFare");
-           Object booked = t.get("PurchaseDateTime");
-           int    fid    = ((Number)t.get("FlightID")).intValue();
-           int    seat   = ((Number)t.get("SeatNumber")).intValue();
+           int    fnum    = ((Number) t.get("FlightNumber")).intValue();
+           String from    = (String) t.get("FromAirportID");
+           String to      = (String) t.get("ToAirportID");
+           String airline = (String) t.get("AirlineName");
+           String cls     = (String) t.get("Class");
+           Object fareO   = t.get("TicketFare");
+           Object booked  = t.get("PurchaseDateTime");
+           int    fid     = ((Number) t.get("FlightID")).intValue();
+           int    seat    = ((Number) t.get("SeatNumber")).intValue();
       %>
         <tr>
           <td><%= fnum %></td>
@@ -60,10 +64,8 @@
           <td><%= fareO %></td>
           <td><%= booked %></td>
           <td>
-            <a href="${pageContext.request.contextPath}/CustRep/reservation/edit
-                ?customerId=${param.customerId}
-                &flightId=${t.FlightID}
-                &seatNo=${t.SeatNumber}">
+            <!-- all on one line, no extra spaces or line-breaks: -->
+            <a href="${pageContext.request.contextPath}/CustRep/reservation/edit?customerId=<%=selected%>&flightId=<%=fid%>&seatNo=<%=seat%>">
               Edit
             </a>
           </td>
@@ -74,6 +76,7 @@
 
   <% if (request.getParameter("customerId") != null) { %>
     <p>
+      <!-- likewise, this must be one continuous URL: -->
       <a href="${pageContext.request.contextPath}/CustRep/reservation/new?customerId=${param.customerId}">
         + New Reservation
       </a>

@@ -1,4 +1,3 @@
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -27,7 +26,7 @@ public class ReservationServlet extends HttpServlet {
             throws ServletException, IOException {
         String path = req.getServletPath();
 
-        // ─── 1) List customers & their reservations ─────────────────────────────
+        // 1) List customers & their reservations
         if ("/CustRep/reservations".equals(path)) {
             List<Map<String,Object>> customers = db.getAllCustomers();
             req.setAttribute("customers", customers);
@@ -43,7 +42,7 @@ public class ReservationServlet extends HttpServlet {
             return;
         }
 
-        // ─── 2) Show “new reservation” form ──────────────────────────────────────
+        // 2) “New reservation” form
         if ("/CustRep/reservation/new".equals(path)) {
             String custId = req.getParameter("customerId");
             if (custId == null || custId.isEmpty()) {
@@ -51,13 +50,14 @@ public class ReservationServlet extends HttpServlet {
                 return;
             }
             req.setAttribute("customerId", custId);
-            req.setAttribute("flights", db.getAllFlights());
+            // <-- load *all* flights here
+            req.setAttribute("flights", db.getAllFlightOptions());
             req.getRequestDispatcher("/ReservationForm.jsp")
                .forward(req, resp);
             return;
         }
 
-        // ─── 3) Show “edit reservation” form ─────────────────────────────────────
+        // 3) “Edit reservation” form
         if ("/CustRep/reservation/edit".equals(path)) {
             String custId   = req.getParameter("customerId");
             int    flightId = Integer.parseInt(req.getParameter("flightId"));
@@ -75,7 +75,8 @@ public class ReservationServlet extends HttpServlet {
 
             req.setAttribute("ticket", ticket);
             req.setAttribute("customerId", custId);
-            req.setAttribute("flights", db.getAllFlights());
+            // <-- and here as well
+            req.setAttribute("flights", db.getAllFlightOptions());
             req.getRequestDispatcher("/ReservationForm.jsp")
                .forward(req, resp);
             return;
@@ -89,14 +90,14 @@ public class ReservationServlet extends HttpServlet {
             throws ServletException, IOException {
         String path = req.getServletPath();
 
-        // ─── 4) Handle “create” ──────────────────────────────────────────────────
+        // ─── Create new reservation ─────────────────────────────────────────────
         if ("/CustRep/reservation/create".equals(path)) {
             String     custId      = req.getParameter("customerId");
             int        flightId    = Integer.parseInt(req.getParameter("flightId"));
             String     travelClass = req.getParameter("travelClass");
             BigDecimal fare        = new BigDecimal(req.getParameter("fare"));
 
-            // 1) create the ticket
+            // 1) insert ticket
             boolean created = db.createReservation(custId, flightId, travelClass, fare);
             if (!created) {
                 req.setAttribute("error", "Could not create reservation");
@@ -105,14 +106,11 @@ public class ReservationServlet extends HttpServlet {
             }
 
             try {
-                // 2) fetch that flight’s duration
+                // 2) build a flight plan & segment
                 Map<String,Object> flight = db.getFlightByFID(String.valueOf(flightId));
                 int duration = ((Number)flight.get("Duration")).intValue();
 
-                // 3) create a one‐segment FlightPlan
                 int planId = db.createFlightPlan(custId, duration, fare.floatValue());
-
-                // 4) insert the single ItinerarySegment
                 db.insertItinerarySegment(planId, /*segmentNum=*/1, travelClass, flightId);
 
             } catch (SQLException e) {
@@ -124,7 +122,7 @@ public class ReservationServlet extends HttpServlet {
             return;
         }
 
-        // ─── 5) Handle “update” ──────────────────────────────────────────────────
+        // ─── Update existing reservation ────────────────────────────────────────
         if ("/CustRep/reservation/update".equals(path)) {
             String     custId      = req.getParameter("customerId");
             int        oldFlight   = Integer.parseInt(req.getParameter("oldFlightId"));
@@ -133,7 +131,7 @@ public class ReservationServlet extends HttpServlet {
             String     newClass    = req.getParameter("travelClass");
             BigDecimal newFare     = new BigDecimal(req.getParameter("fare"));
 
-            // 1) update the ticket (delete + reinsert internally)
+            // 1) update the ticket (delete + reinsert)
             boolean updated = db.updateReservation(
                 custId,
                 oldFlight, oldSeat,
@@ -146,26 +144,42 @@ public class ReservationServlet extends HttpServlet {
             }
 
             try {
-                // 2) find the user’s most recent FlightPlanID
-                int planId = db.getUserFlightPlans(custId).stream()
-                              .mapToInt(m -> ((Number)m.get("FlightPlanID")).intValue())
-                              .max()
-                              .orElseThrow(() -> new SQLException("No flight plan found"));
+                // 2) find their latest flight plan
+                List<Map<String,Object>> plans = db.getUserFlightPlans(custId);
+                if (plans.isEmpty()) {
+                    // no existing plan → create new one
+                    Map<String,Object> fl = db.getFlightByFID(String.valueOf(newFlight));
+                    int dur = ((Number)fl.get("Duration")).intValue();
+                    int planId = db.createFlightPlan(custId, dur, newFare.floatValue());
+                    db.insertItinerarySegment(planId, 1, newClass, newFlight);
+                } else {
+                    // update the most recent plan
+                    int planId = plans.stream()
+                                      .mapToInt(m -> ((Number)m.get("FlightPlanID")).intValue())
+                                      .max()
+                                      .orElseThrow(() -> new SQLException("No flight plan found"));
 
-                // 3) re‐insert (or you could delete & insert) the single segment
-                db.insertItinerarySegment(planId, /*segmentNum=*/1, newClass, newFlight);
+                    // 3) update the existing itinerary segment
+                    String updSegSql =
+                      "UPDATE ItinerarySegment " +
+                      "   SET FlightID = ?, Class = ? " +
+                      " WHERE FlightPlanID = ? AND SegmentNum = ?";
+                    db.executeUpdate(updSegSql,
+                                     newFlight, newClass,
+                                     planId, 1);
 
-                // 4) recompute totals and update FlightPlan
-                Map<String,Object> flight = db.getFlightByFID(String.valueOf(newFlight));
-                int duration = ((Number)flight.get("Duration")).intValue();
+                    // 4) recompute totals on the flight plan
+                    Map<String,Object> fl = db.getFlightByFID(String.valueOf(newFlight));
+                    int dur = ((Number)fl.get("Duration")).intValue();
 
-                String updSql = """
-                    UPDATE FlightPlan
-                       SET TotalDuration = ?,
-                           TotalFare     = ?
-                     WHERE FlightPlanID  = ?
-                """;
-                db.executeUpdate(updSql, duration, newFare.floatValue(), planId);
+                    String updPlanSql =
+                      "UPDATE FlightPlan " +
+                      "   SET TotalDuration = ?, TotalFare = ? " +
+                      " WHERE FlightPlanID  = ?";
+                    db.executeUpdate(updPlanSql,
+                                     dur, newFare.floatValue(),
+                                     planId);
+                }
 
             } catch (SQLException e) {
                 throw new ServletException("Failed to update flight plan", e);
