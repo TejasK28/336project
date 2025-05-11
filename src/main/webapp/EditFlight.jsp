@@ -91,6 +91,21 @@
             <% } %>
         </select>
     </div>
+    
+      <div class="form-group">
+  <label for="aircraft">Aircraft</label>
+  <select id="aircraft" name="AircraftID" required>
+    <%-- iterate the list you set in doGet: --%>
+    <% for (Map<String,Object> ac : (List<Map<String,Object>>)request.getAttribute("aircrafts")) {
+         String acId     = ac.get("AircraftID").toString();
+         String selAcId  = String.valueOf(flight.get("AircraftID"));
+    %>
+      <option value="<%=acId%>" <%= acId.equals(selAcId) ? "selected" : "" %>>
+        <%= ac.get("Model") %> (#<%= acId %>)
+      </option>
+    <% } %>
+  </select>
+</div>
 
     <div class="form-group">
         <label for="departTime">Departure Time</label>
@@ -115,6 +130,11 @@
         <button type="submit" class="btn btn-save">Save Changes</button>
         <a href="<%=request.getContextPath()%>/CustRep" class="btn btn-revert">Cancel</a>
     </div>
+    
+    
+  
+    
+    
 </form>
 <% } %>
 

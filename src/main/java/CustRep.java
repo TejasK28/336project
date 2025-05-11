@@ -80,20 +80,25 @@ public class CustRep extends HttpServlet {
 				return;
 			}
 		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/editFlight")) {
-			String fid = request.getParameter("flightId");
-			request.setAttribute("flight", r.getFlightByFID(fid));
+		    String fid = request.getParameter("flightId");
+		    request.setAttribute("flight", r.getFlightByFID(fid));
 
-			// Grab Airport data from database
-			List<Map<String, Object>> airports = r.getAllAirports();
-			request.setAttribute("airports", airports);
+		    // Grab Airport data
+		    List<Map<String,Object>> airports = r.getAllAirports();
+		    request.setAttribute("airports", airports);
 
-			// Grab Airline data from database
-			List<Map<String, Object>> airlines = r.getAllAirlines();
-			request.setAttribute("airlines", airlines);
+		    // Grab Airline data
+		    List<Map<String,Object>> airlines = r.getAllAirlines();
+		    request.setAttribute("airlines", airlines);
 
-			request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
-			return;
-		} else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/editAirport")) {
+		    // *** NEW: Grab Aircraft data too ***
+		    List<Map<String,Object>> aircrafts = r.getAllAircrafts(); 
+		    request.setAttribute("aircrafts", aircrafts);
+
+		    request.getRequestDispatcher("/EditFlight.jsp").forward(request, response);
+		    return;
+		}
+ else if ("/CustRep".equals(request.getServletPath()) && pathInfo.contains("/editAirport")) {
 			String aid = request.getParameter("airportID");
 			request.setAttribute("airport", r.getAirportByID(aid));
 
@@ -250,6 +255,8 @@ public class CustRep extends HttpServlet {
 			String departTimeStr = request.getParameter("DepartTime"); // "2025-05-10T14:30"
 			String arrivalTimeStr = request.getParameter("ArrivalTime");
 			String operatingDays = request.getParameter("OperatingDays");
+			String aircraftIdStr = request.getParameter("AircraftID");    // NEW
+
 
 			// 2. Basic validation (you can expand)
 			if (flightIdStr == null || flightNumStr == null || airlineIdStr == null || fromAirportId == null
@@ -277,8 +284,13 @@ public class CustRep extends HttpServlet {
 				// public boolean updateFlight(int flightId, int flightNum, int airlineId,
 				// String fromAirport, String toAirport,
 				// LocalDateTime depart, LocalDateTime arrive, String operatingDays)
-				boolean ok = db.updateFlight(flightId, flightNum, airlineId, fromAirportId, toAirportId, depart, arrive,
-						operatingDays);
+				boolean ok = db.updateFlight(
+					    flightId, flightNum, airlineId,
+					    fromAirportId, toAirportId,
+					    depart, arrive,
+					    operatingDays,
+					    Integer.parseInt(aircraftIdStr)               // NEW
+					);
 
 				if (!ok) {
 					request.setAttribute("error", "Update failed.");
@@ -289,13 +301,9 @@ public class CustRep extends HttpServlet {
 				throw new ServletException("Error updating flight", e);
 			}
 
-			// 5. Redirect back to wherever they came from
-			String referer = request.getHeader("Referer");
-			if (referer != null && !referer.isEmpty()) {
-				response.sendRedirect(referer);
-			} else {
+			
+			
 				response.sendRedirect(request.getContextPath() + "/CustRep");
-			}
 			return;
 		}
 		else if ("/editAirport".equals(request.getServletPath())) {
