@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -185,7 +187,7 @@ public class MySQL {
 			while (rs.next()) {
 				employeeMap.put("EmployeeID", rs.getString("EmployeeID"));
 				employeeMap.put("FirstName", rs.getString("FirstName"));
-				employeeMap.put("Password",   rs.getString("Password"));
+				employeeMap.put("Password", rs.getString("Password"));
 				employeeMap.put("LastName", rs.getString("LastName"));
 				employeeMap.put("Email", rs.getString("Email"));
 				employeeMap.put("isAdmin", rs.getBoolean("isAdmin"));
@@ -397,6 +399,7 @@ public class MySQL {
 						"FROM Airline a " +
 						"ORDER BY a.Name;";
 
+
 		return executeQuery(sql);
 	}
 
@@ -495,7 +498,6 @@ public class MySQL {
 			ps.setString(1, airportID);
 			int rowsDeleted = ps.executeUpdate();
 			return rowsDeleted > 0;
-
 		} catch (SQLException e) {
 			// You might use a logger instead of printStackTrace in real code
 			e.printStackTrace();
@@ -597,7 +599,6 @@ public class MySQL {
 		}
 	}
 
-
 	/**
 	 * One-way search on an exact date, now including flight-plan flags.
 	 */
@@ -633,10 +634,275 @@ public class MySQL {
 				Date.valueOf(departDate));
 	}
 
+	public List<Map<String, Object>> getDirectFlights(String fromAirport, String toAirport, LocalDate start,
+			LocalDate end) throws SQLException {
+
+		// if end is null, just search on the single start‐date
+		LocalDate effectiveEnd = (end == null) ? start : end;
+
+		String sql = "SELECT " + "  f.FlightID             AS first_leg_id, "
+				+ "  NULL                   AS second_leg_id, " + "  f.FromAirportID        AS origin, "
+				+ "  NULL                   AS stopover, " + "  f.ToAirportID          AS destination, "
+				+ "  f.DepartTime           AS depart_time, " + "  f.ArrivalTime          AS arrival_time, "
+				+ "  f.StandardFare         AS total_fare, " + "  f.Duration             AS total_duration, "
+				+ "  a.Name                 AS airlineName " + "FROM Flight f "
+				+ "JOIN Airline a ON f.AirlineID = a.AirlineID " + "WHERE f.LayoverFlightID IS NULL "
+				+ "  AND f.FromAirportID = ? " + "  AND f.ToAirportID   = ? "
+				+ "  AND DATE(f.DepartTime) BETWEEN ? AND ? " + // now uses effectiveEnd
+				"  AND NOT EXISTS ( " + "      SELECT 1 FROM Flight x " + "      WHERE x.LayoverFlightID = f.FlightID "
+				+ "  )";
+
+		try (Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+
+			ps.setString(1, fromAirport);
+			ps.setString(2, toAirport);
+			ps.setDate(3, java.sql.Date.valueOf(start)); // start
+			ps.setDate(4, java.sql.Date.valueOf(effectiveEnd)); // end or start if null
+
+			try (ResultSet rs = ps.executeQuery()) {
+				List<Map<String, Object>> result = new ArrayList<>();
+				while (rs.next()) {
+					Map<String, Object> row = new HashMap<>();
+					row.put("first_leg_id", rs.getInt("first_leg_id"));
+					row.put("second_leg_id", rs.getObject("second_leg_id"));
+					row.put("origin", rs.getString("origin"));
+					row.put("stopover", rs.getString("stopover"));
+					row.put("destination", rs.getString("destination"));
+					row.put("depart_time", rs.getTimestamp("depart_time").toLocalDateTime());
+					row.put("arrival_time", rs.getTimestamp("arrival_time").toLocalDateTime());
+					row.put("total_fare", rs.getBigDecimal("total_fare"));
+					row.put("total_duration", rs.getLong("total_duration"));
+					row.put("airlineName", rs.getString("airlineName"));
+					result.add(row);
+				}
+				return result;
+			}
+		}
+	}
 
 	/**
-	 * ±3-day flexible search, now including flight-plan flags.
+	 * 2-Leg (one-stop) itineraries: join Flight→Flight via LayoverFlightID.
 	 */
+	public List<Map<String, Object>> getOneStopFlights(String fromAirport, String toAirport, LocalDate start,
+			LocalDate end) throws SQLException {
+		String sql = "SELECT " + "  f1.FlightID                            AS first_leg_id, "
+				+ "  f2.FlightID                            AS second_leg_id, "
+				+ "  f1.FromAirportID                       AS origin, "
+				+ "  f1.ToAirportID                         AS stopover, "
+				+ "  f2.ToAirportID                         AS destination, "
+				+ "  f1.DepartTime                          AS depart_time, "
+				+ "  f2.ArrivalTime                         AS arrival_time, "
+				+ "  (f1.StandardFare + f2.StandardFare)    AS total_fare, " + "  (f1.Duration + f2.Duration + "
+				+ "   TIMESTAMPDIFF(MINUTE, f1.ArrivalTime, f2.DepartTime)"
+				+ "  )                                      AS total_duration, "
+				+ "  a1.Name                                AS airlineName " + "FROM Flight f1 "
+				+ "JOIN Flight f2 ON f1.LayoverFlightID = f2.FlightID "
+				+ "JOIN Airline a1 ON f1.AirlineID = a1.AirlineID " + "WHERE f1.FromAirportID = ? "
+				+ "  AND f2.ToAirportID   = ? " + "  AND DATE(f1.DepartTime) BETWEEN ? AND ? "
+				+ "  AND DATE(f2.DepartTime) BETWEEN ? AND ? "
+				+ "  AND TIMESTAMPDIFF(MINUTE, f1.ArrivalTime, f2.DepartTime) BETWEEN 60 AND 360";
+
+		try (Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+			ps.setString(1, fromAirport);
+			ps.setString(2, toAirport);
+			ps.setDate(3, java.sql.Date.valueOf(start));
+			ps.setDate(4, java.sql.Date.valueOf(end));
+			ps.setDate(5, java.sql.Date.valueOf(start));
+			ps.setDate(6, java.sql.Date.valueOf(end));
+			try (ResultSet rs = ps.executeQuery()) {
+				List<Map<String, Object>> result = new ArrayList<>();
+				while (rs.next()) {
+					Map<String, Object> row = new HashMap<>();
+					row.put("first_leg_id", rs.getInt("first_leg_id"));
+					row.put("second_leg_id", rs.getInt("second_leg_id"));
+					row.put("origin", rs.getString("origin"));
+					row.put("stopover", rs.getString("stopover"));
+					row.put("destination", rs.getString("destination"));
+					row.put("depart_time", rs.getTimestamp("depart_time").toLocalDateTime());
+					row.put("arrival_time", rs.getTimestamp("arrival_time").toLocalDateTime());
+					row.put("total_fare", rs.getBigDecimal("total_fare"));
+					row.put("total_duration", rs.getLong("total_duration"));
+					row.put("airlineName", rs.getString("airlineName"));
+					result.add(row);
+				}
+				return result;
+			}
+		}
+	}
+
+	/**
+	 * Flexible direct flights: no stop, date between (start–3d) and (end+3d).
+	 */
+	public List<Map<String, Object>> getDirectFlightsFlexible(String fromAirport, String toAirport, LocalDate start,
+			LocalDate end) throws SQLException {
+		// compute ±3-day window
+		LocalDate flexStart = start.minusDays(3);
+		LocalDate flexEnd = (end == null ? start : end).plusDays(3);
+
+		String sql = "SELECT " + "  f.FlightID             AS first_leg_id, "
+				+ "  NULL                   AS second_leg_id, " + "  f.FromAirportID        AS origin, "
+				+ "  NULL                   AS stopover, " + "  f.ToAirportID          AS destination, "
+				+ "  f.DepartTime           AS depart_time, " + "  f.ArrivalTime          AS arrival_time, "
+				+ "  f.StandardFare         AS total_fare, " + "  f.Duration             AS total_duration, "
+				+ "  a.Name                 AS airlineName " + "FROM Flight f "
+				+ "JOIN Airline a ON f.AirlineID = a.AirlineID " + "WHERE f.LayoverFlightID IS NULL "
+				+ "  AND f.FromAirportID = ? " + "  AND f.ToAirportID   = ? "
+				+ "  AND DATE(f.DepartTime) BETWEEN ? AND ? " + // uses flexStart/flexEnd
+				"  AND NOT EXISTS ( " + "      SELECT 1 FROM Flight x " + "      WHERE x.LayoverFlightID = f.FlightID "
+				+ "  )";
+
+		try (Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+
+			ps.setString(1, fromAirport);
+			ps.setString(2, toAirport);
+			ps.setDate(3, java.sql.Date.valueOf(flexStart));
+			ps.setDate(4, java.sql.Date.valueOf(flexEnd));
+
+			try (ResultSet rs = ps.executeQuery()) {
+				List<Map<String, Object>> result = new ArrayList<>();
+				while (rs.next()) {
+					Map<String, Object> row = new HashMap<>();
+					row.put("first_leg_id", rs.getInt("first_leg_id"));
+					row.put("second_leg_id", rs.getObject("second_leg_id"));
+					row.put("origin", rs.getString("origin"));
+					row.put("stopover", rs.getString("stopover"));
+					row.put("destination", rs.getString("destination"));
+					row.put("depart_time", rs.getTimestamp("depart_time").toLocalDateTime());
+					row.put("arrival_time", rs.getTimestamp("arrival_time").toLocalDateTime());
+					row.put("total_fare", rs.getBigDecimal("total_fare"));
+					row.put("total_duration", rs.getLong("total_duration"));
+					row.put("airlineName", rs.getString("airlineName"));
+					result.add(row);
+				}
+				return result;
+			}
+		}
+		
+	}
+	
+	
+	
+	/**
+     * Execute an INSERT/UPDATE/DELETE, binding any params, and return
+     * the number of rows affected.
+     */
+    public int executeUpdate(String sql, Object... params) {
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            // bind parameters
+            for (int i = 0; i < params.length; i++) {
+                Object p = params[i];
+                // if it’s a LocalDateTime, convert to Timestamp
+                if (p instanceof LocalDateTime) {
+                    ps.setTimestamp(i+1, Timestamp.valueOf((LocalDateTime)p));
+                } else {
+                    ps.setObject(i+1, p);
+                }
+            }
+            return ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+	
+	
+	/*
+	 * Method to add a new question
+	 */	
+	
+	// 1) Post a new question
+	public boolean addQuestion(String customerId, LocalDateTime when, String message) {
+	  String sql = """
+	    INSERT INTO Question(CustomerID, SubmitDateTime, Message)
+	    VALUES (?, ?, ?)
+	  """;
+	  return executeUpdate(sql, customerId, when, message) > 0;
+	}
+
+	// 2) Browse all questions (with optional paging)
+	public List<Map<String,Object>> getAllQuestions() {
+	  String sql = """
+	    SELECT q.QuestionID, q.CustomerID, q.SubmitDateTime, q.Message,
+	           c.FirstName, c.LastName
+	      FROM Question q
+	      JOIN Customer c ON c.CustomerID = q.CustomerID
+	     ORDER BY q.SubmitDateTime DESC
+	  """;
+	  return executeQuery(sql);
+	}
+
+	public List<Map<String,Object>> searchQuestions(String keyword) {
+		  String sql = """
+		    SELECT q.QuestionID,
+		           q.CustomerID,
+		           q.SubmitDateTime,
+		           q.Message,
+		           c.FirstName,
+		           c.LastName
+		      FROM Question q
+		      JOIN Customer c ON c.CustomerID = q.CustomerID
+		     WHERE q.Message LIKE ?
+		     ORDER BY q.SubmitDateTime DESC
+		  """;
+		  return executeQuery(sql, "%" + keyword + "%");
+		}
+
+
+
+	// 4) Post an answer
+	public boolean addAnswer(int questionId, String employeeId, LocalDateTime when, String message) {
+	  String sql = """
+	    INSERT INTO Answer(QuestionID, EmployeeID, ResponseDateTime, Message)
+	    VALUES (?, ?, ?, ?)
+	  """;
+	  return executeUpdate(sql, questionId, employeeId, when, message) > 0;
+	}
+
+	// 5) Browse answers for a question
+	public List<Map<String,Object>> getAnswersForQuestion(int questionId) {
+	  String sql = """
+	    SELECT a.AnswerID, a.EmployeeID, a.ResponseDateTime, a.Message,
+	           e.FirstName, e.LastName
+	      FROM Answer a
+	      JOIN Employee e ON e.EmployeeID = a.EmployeeID
+	     WHERE a.QuestionID = ?
+	     ORDER BY a.ResponseDateTime
+	  """;
+	  return executeQuery(sql, questionId);
+	}
+	
+	
+	public Map<String,Object> getQuestionById(int id) {
+		  String sql = """
+		    SELECT q.QuestionID, q.CustomerID, q.SubmitDateTime, q.Message,
+		           c.FirstName, c.LastName
+		      FROM Question q
+		      JOIN Customer c ON c.CustomerID = q.CustomerID
+		     WHERE q.QuestionID = ?""";
+		  return executeQuery(sql, id).get(0);
+		}
+	
+	
+	public List<Map<String,Object>> getQuestionsByCustomer(String customerId) {
+	    String sql = """
+	      SELECT q.QuestionID,
+	             q.SubmitDateTime,
+	             q.Message
+	        FROM Question q
+	       WHERE q.CustomerID = ?
+	       ORDER BY q.SubmitDateTime DESC
+	    """;
+	    return executeQuery(sql, customerId);
+	}
+    
+	/**
+	 * Flexible one-stop itineraries: both legs depart between (start–3d) and
+	 * (end+3d).
+	 */
+
 	public List<Map<String,Object>> searchFlexible(
 			String fromAirport,
 			String toAirport,
@@ -866,5 +1132,150 @@ public class MySQL {
         }
         return null;
     }
+
+	public List<Map<String, Object>> getOneStopFlightsFlexible(String fromAirport, String toAirport, LocalDate start,
+			LocalDate end) throws SQLException {
+		LocalDate flexStart = start.minusDays(3);
+		LocalDate flexEnd = (end == null ? start : end).plusDays(3);
+
+		String sql = "SELECT " + "  f1.FlightID                            AS first_leg_id, "
+				+ "  f2.FlightID                            AS second_leg_id, "
+				+ "  f1.FromAirportID                       AS origin, "
+				+ "  f1.ToAirportID                         AS stopover, "
+				+ "  f2.ToAirportID                         AS destination, "
+				+ "  f1.DepartTime                          AS depart_time, "
+				+ "  f2.ArrivalTime                         AS arrival_time, "
+				+ "  (f1.StandardFare + f2.StandardFare)    AS total_fare, " + "  (f1.Duration + f2.Duration + "
+				+ "   TIMESTAMPDIFF(MINUTE, f1.ArrivalTime, f2.DepartTime)"
+				+ "  )                                      AS total_duration, "
+				+ "  a1.Name                                AS airlineName " + "FROM Flight f1 "
+				+ "JOIN Flight f2 ON f1.LayoverFlightID = f2.FlightID "
+				+ "JOIN Airline a1 ON f1.AirlineID = a1.AirlineID " + "WHERE f1.FromAirportID = ? "
+				+ "  AND f2.ToAirportID   = ? " + "  AND DATE(f1.DepartTime) BETWEEN ? AND ? " + // flexStart/flexEnd
+				"  AND DATE(f2.DepartTime) BETWEEN ? AND ? " + // flexStart/flexEnd
+				"  AND TIMESTAMPDIFF(MINUTE, f1.ArrivalTime, f2.DepartTime) BETWEEN 60 AND 360";
+
+		try (Connection connection = getConnection(); PreparedStatement ps = connection.prepareStatement(sql)) {
+			ps.setString(1, fromAirport);
+			ps.setString(2, toAirport);
+			ps.setDate(3, java.sql.Date.valueOf(flexStart));
+			ps.setDate(4, java.sql.Date.valueOf(flexEnd));
+			ps.setDate(5, java.sql.Date.valueOf(flexStart));
+			ps.setDate(6, java.sql.Date.valueOf(flexEnd));
+
+			try (ResultSet rs = ps.executeQuery()) {
+				List<Map<String, Object>> result = new ArrayList<>();
+				while (rs.next()) {
+					Map<String, Object> row = new HashMap<>();
+					row.put("first_leg_id", rs.getInt("first_leg_id"));
+					row.put("second_leg_id", rs.getInt("second_leg_id"));
+					row.put("origin", rs.getString("origin"));
+					row.put("stopover", rs.getString("stopover"));
+					row.put("destination", rs.getString("destination"));
+					row.put("depart_time", rs.getTimestamp("depart_time").toLocalDateTime());
+					row.put("arrival_time", rs.getTimestamp("arrival_time").toLocalDateTime());
+					row.put("total_fare", rs.getBigDecimal("total_fare"));
+					row.put("total_duration", rs.getLong("total_duration"));
+					row.put("airlineName", rs.getString("airlineName"));
+					result.add(row);
+				}
+				return result;
+			}
+		}
+	}
+	
+	public int createFlightPlan(String cuID, int totalDur, float totalCost) throws SQLException {
+	    String sql = "INSERT INTO FlightPlan (CustomerID, TotalDuration, TotalFare) VALUES (?, ?, ?)";
+
+	    // This will hold the generated key we fetch below
+	    int newFlightPlanId = -1;
+
+	    try (Connection connection = getConnection();
+	         PreparedStatement ps = connection.prepareStatement(
+	           sql,
+	           Statement.RETURN_GENERATED_KEYS   // ask for auto‐generated keys
+	         )) {
+
+	        // bind your parameters…
+	        ps.setString(1, cuID);
+	        ps.setInt(2, totalDur);
+	        ps.setFloat(3, totalCost);
+
+	        int rows = ps.executeUpdate();
+	        if (rows == 0) {
+	            throw new SQLException("Inserting FlightPlan failed, no rows affected.");
+	        }
+
+	        // now pull the generated key
+	        try (ResultSet keys = ps.getGeneratedKeys()) {
+	            if (keys.next()) {
+	                newFlightPlanId = keys.getInt(1);
+	                System.out.println("Inserted FlightPlanID = " + newFlightPlanId);
+	            } else {
+	                throw new SQLException("Inserting FlightPlan failed, no ID obtained.");
+	            }
+	        }
+	    }
+
+	    return newFlightPlanId;
+	}
+	
+	public boolean insertItinerarySegment(int flightPlanId, int segmentNum, String travelClass, int flightID) {
+	    String sql = 
+	      "INSERT INTO ItinerarySegment (FlightPlanID, SegmentNum, Class, FlightID) " +
+	      "VALUES (?, ?, ?, ?)";
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, flightPlanId);
+	        ps.setInt(2, segmentNum);
+	        ps.setString(3, travelClass);
+	        ps.setInt(4, flightID);
+
+	        int affected = ps.executeUpdate();
+	        return (affected == 1);
+
+	    } catch (SQLException e) {
+	        // log the exception and return false to indicate failure
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	private int getNextSeatNumber(int flightID) {
+		String sql = "SELECT COUNT(*)+1 as seatNum FROM Ticket WHERE FlightID = ?";
+		return Integer.valueOf((String) executeQuery(sql, flightID).get(0).get("seatNum"));
+	}
+	
+	public boolean createTicket(int flightID, float ticketFare, String className) {
+	    String sql = 
+	      "INSERT INTO Ticket (FlightID, SeatNumber, Class, TicketFare, BookingFee) " +
+	      "VALUES (?, ?, ?, ?, ?)";
+	    int seatNumber = getNextSeatNumber(flightID);
+	    float bookingFee = (float) (("First".equals(className)) ? 15.00 : 0.00);
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+	        ps.setInt(1, flightID);
+	        ps.setInt(2, seatNumber);
+	        ps.setString(3, className);
+	        ps.setFloat(4, ticketFare);
+	        ps.setFloat(5,  bookingFee);
+
+	        int affected = ps.executeUpdate();
+	        return (affected == 1);
+
+	    } catch (SQLException e) {
+	        // log the exception and return false to indicate failure
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	public List<Map<String, Object>> getUserFlightPlans(String cust_id) {
+		String sql = "SELECT * FROM FlightPlan WHERE CustomerID = ?";
+		return executeQuery(sql, cust_id);
+	}
+	
 
 }

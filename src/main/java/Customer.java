@@ -8,16 +8,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Servlet implementation class Customer
  */
-@WebServlet({"/addRTFlightToPlan", "/addOWFlightToPlan", "/addLayFlightToPlan"})
+@WebServlet({"/addRTFlightToPlan", "/addOWFlightToPlan", "/addLayFlightToPlan", "/reserveFlights"})
 public class Customer extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-       
     /**
      * @see HttpServlet#HttpServlet()
      */
@@ -30,15 +32,31 @@ public class Customer extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		MySQL db = new MySQL();
+		if ("/reserveFlights".equals(request.getServletPath())) {
+		    List<String> custFlightPlan = (List<String>) request.getSession().getAttribute("CustFlightPlan");
+		    if (custFlightPlan == null || custFlightPlan.isEmpty()) {
+		    	request.setAttribute("EmptyFlightPlan", true);
+		    	response.sendRedirect(request.getContextPath() + "/Home");
+		    	return;
+		    }
+		    
+		    List<Map<String, Object>> flights = new ArrayList<>();
+		    
+		    for (String flightID : custFlightPlan) {
+		    	flights.add(db.getFlightByFID(flightID));
+		    }
+		    
+		    request.setAttribute("flights", flights);
+		    request.getRequestDispatcher("/MakeRes.jsp").forward(request, response);
+		}
 	}
-
 	/**
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
+		MySQL db = new MySQL();
 		if ("/addFlightToPlan".equals(request.getServletPath())) {
 		    String flightID = request.getParameter("flightID");
 		    HttpSession session = request.getSession();
@@ -89,7 +107,7 @@ public class Customer extends HttpServlet {
 		    return;
 		}
 		else if ("/addOWFlightToPlan".equals(request.getServletPath())) {
-			String outgoingFID = request.getParameter("outboundFlight");
+			String outgoingFID = request.getParameter("leg1ID");
 			
 			HttpSession session = request.getSession();
 
@@ -113,7 +131,8 @@ public class Customer extends HttpServlet {
 		    return;
 		}
 		else if ("/addLayFlightToPlan".equals(request.getServletPath())) {
-			String outgoingFID = request.getParameter("outboundFlight");
+			String leg1ID = request.getParameter("leg1ID");
+			String leg2ID = request.getParameter("leg2ID");
 			
 			HttpSession session = request.getSession();
 
@@ -126,7 +145,8 @@ public class Customer extends HttpServlet {
 		    }
 
 		    // 2) Add the new flight
-		    custFlightPlan.add(outgoingFID);
+		    custFlightPlan.add(leg1ID);
+		    custFlightPlan.add(leg2ID);
 		    // (no need to session.setAttribute again since it's the same list object)
 
 		    // 3) Set a "flash" flag so Home.jsp can show a "Flight added!" message
@@ -136,8 +156,45 @@ public class Customer extends HttpServlet {
 		    response.sendRedirect(request.getContextPath() + "/Home");
 		    return;
 		}
+		else if ("/reserveFlights".equals(request.getServletPath())) {
+		    List<String> custFlightPlan = (List<String>) request.getSession().getAttribute("CustFlightPlan");
+		    
+		    if (custFlightPlan == null || custFlightPlan.isEmpty()) {
+		    	request.setAttribute("PlanCreationFailed", true);
+		    	response.sendRedirect(request.getContextPath() + "/Home");
+		    	return;
+		    }
+		    
+		    Map<String, String> flightIDClassMapping = new HashMap<>();
+		    for (int i = 0; i < custFlightPlan.size(); i++) {
+		    	flightIDClassMapping.put(custFlightPlan.get(i), request.getParameter("flight"+(i+1)+"Id"));
+		    }
+		    
+		    int fpID = 0;
+		    String cuID = (String) request.getSession().getAttribute("uname");
+		    int totalDur = Integer.valueOf(request.getParameter("totalDur"));
+		    float totalCost = Float.valueOf(request.getParameter("totalCost"));
+		    
+		    try {
+				fpID = db.createFlightPlan(cuID, totalDur, totalCost);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		    
+		   
+		    for (int i = 0; i < custFlightPlan.size(); i++) {
+				int flightID = Integer.parseInt(custFlightPlan.get(i));
+//				float ticketFare = 
+				db.insertItinerarySegment(fpID, i, flightIDClassMapping.get(custFlightPlan.get(i)), flightID);
+		    }
+		    
+		    request.setAttribute("FPSuccess", true);
+		    request.getSession().removeAttribute("CustFlightPlan");
+		    response.sendRedirect(request.getContextPath() + "/Home");
+		    
+		}
 
-		doGet(request, response);
 	}
 
 }

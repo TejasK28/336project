@@ -40,15 +40,15 @@ The above are the project specifications that are required to run this properly.
 ✅ Sort flights by different criteria (price, take-off time, landing time, duration of flight)  
 ⚠️ Filter the list of flights by various criteria (price, number of stops, airline, take-off time, landing time)  @shivam add # of stops
 
-❌ Browse questions and answers  
-❌ Search questions and answers by keywords  
+✅ Browse questions and answers  
+✅ Search questions and answers by keywords  
 ❌ Make flight reservations/buy the ticket  
 ❌ Enter the waiting list if the flight is full  
 ❌ View all the past flight reservations with their details  
 ❌ View all the upcoming flights with their details  
 ❌ Cancel their flight reservations (if it is business or first class)  
 ❌ Send an alert to customers in the waiting list that there is an empty seat  
-❌ Post questions to the customer representative  
+✅ Post questions to the customer representative  
 
 ---
 
@@ -70,4 +70,4 @@ The above are the project specifications that are required to run this properly.
 ❌ Add, Edit, Delete information for aircrafts, airports, and flights  
 ❌ Retrieve a list of all the passengers who are on the waiting list of a particular flight  
 ✅ Produce a list of all flights for a given airport (departing and arriving)  
-❌ Reply to user’s questions  
+✅ Reply to user’s questions  
