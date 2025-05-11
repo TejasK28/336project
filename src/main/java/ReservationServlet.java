@@ -1,4 +1,3 @@
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -51,7 +50,8 @@ public class ReservationServlet extends HttpServlet {
                 return;
             }
             req.setAttribute("customerId", custId);
-            req.setAttribute("flights", db.getAllFlights());
+            // <-- load *all* flights here
+            req.setAttribute("flights", db.getAllFlightOptions());
             req.getRequestDispatcher("/ReservationForm.jsp")
                .forward(req, resp);
             return;
@@ -75,7 +75,8 @@ public class ReservationServlet extends HttpServlet {
 
             req.setAttribute("ticket", ticket);
             req.setAttribute("customerId", custId);
-            req.setAttribute("flights", db.getAllFlights());
+            // <-- and here as well
+            req.setAttribute("flights", db.getAllFlightOptions());
             req.getRequestDispatcher("/ReservationForm.jsp")
                .forward(req, resp);
             return;

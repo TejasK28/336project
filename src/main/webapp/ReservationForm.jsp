@@ -1,4 +1,4 @@
-<%@ page import="java.util.List,java.util.Map,java.time.LocalDateTime,java.time.format.DateTimeFormatter" %>
+<%@ page import="java.util.List,java.util.Map" %>
 <%
   @SuppressWarnings("unchecked")
   Map<String,Object> ticket   = (Map<String,Object>) request.getAttribute("ticket");
@@ -6,9 +6,6 @@
   List<Map<String,Object>> flights = (List<Map<String,Object>>) request.getAttribute("flights");
   String custId = (String) request.getAttribute("customerId");
   boolean editing = (ticket != null);
-
-  // prepare a formatter once
-  DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 %>
 <!DOCTYPE html>
 <html>
@@ -36,16 +33,15 @@
       <select name="flightId" id="flight" required>
         <option value="">-- select flight --</option>
         <% for (Map<String,Object> f : flights) {
-             int   fid  = ((Number)f.get("FlightID")).intValue();
-             int   num  = ((Number)f.get("FlightNumber")).intValue();
-             String from= (String)f.get("FromAirportID");
-             String to  = (String)f.get("ToAirportID");
-             // now a LocalDateTime
-             LocalDateTime dt = (LocalDateTime) f.get("DepartTime");
-             boolean sel = editing && fid == ((Number)ticket.get("FlightID")).intValue();
+             int fid  = ((Number)f.get("FlightID")).intValue();
+             int num  = ((Number)f.get("FlightNumber")).intValue();
+             String from = (String)f.get("FromAirportID");
+             String to   = (String)f.get("ToAirportID");
+             boolean sel = editing 
+                       && fid == ((Number)ticket.get("FlightID")).intValue();
         %>
-          <option value="<%=fid%>" <%= sel ? "selected" : "" %>>
-            <%= num %> : <%= fmt.format(dt) %>
+          <option value="<%= fid %>" <%= sel ? "selected" : "" %>>
+            <%= num %> / <%= to %> / <%= from %>
           </option>
         <% } %>
       </select>
@@ -68,7 +64,6 @@
 
     <p>
       <button type="submit"><%= editing ? "Update" : "Book" %></button>
-      <!-- no stray spaces in this URL -->
       <a href="${pageContext.request.contextPath}/CustRep/reservations?customerId=<%=custId%>">
         Back
       </a>
