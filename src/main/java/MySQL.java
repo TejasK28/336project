@@ -428,9 +428,26 @@ public class MySQL {
 	}
 
 	public List<Map<String, Object>> getFlightsAtAirport(String airport_id) {
-		String sql = "SELECT * FROM Flight WHERE ToAirportID = ? OR FromAirportID = ?";
-		return executeQuery(sql, airport_id, airport_id);
+	    String sql = """
+	      SELECT 
+	        f.FlightID,
+	        f.AirlineID,
+	        f.FlightNumber,
+	        f.FromAirportID,
+	        f.ToAirportID,
+	        f.DepartTime,
+	        f.ArrivalTime,
+	        f.OperatingDays,
+	        f.AircraftID,
+	        a.Model AS AircraftModel
+	      FROM Flight f
+	      JOIN Aircraft a USING (AircraftID)
+	      WHERE f.ToAirportID   = ?
+	         OR f.FromAirportID = ?
+	    """;
+	    return executeQuery(sql, airport_id, airport_id);
 	}
+
 
 	public boolean addAircraft(String airlineId, String model, int totalSeats, String configStr) {
 		String sql = "INSERT INTO Aircraft(AirlineID, Model, TotalSeats, ClassConfigurations)" + "VALUES (?,?,?,?)";
@@ -529,31 +546,6 @@ public class MySQL {
 
 		}
 		catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-
-	public boolean updateFlight(int flightId, int flightNumber, int airlineId, String fromAirport, String toAirport,
-			LocalDateTime depart, LocalDateTime arrive, String operatingDays) {
-		String sql = "UPDATE Flight" + " SET FlightNumber = ?," + "     AirlineID    = ?," + "     FromAirportID= ?,"
-				+ "     ToAirportID  = ?," + "     DepartTime   = ?," + "     ArrivalTime  = ?,"
-				+ "     OperatingDays= ?" + " WHERE FlightID = ?";
-		try (Connection con = getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-
-			ps.setInt(1, flightNumber);
-			ps.setInt(2, airlineId);
-			ps.setString(3, fromAirport);
-			ps.setString(4, toAirport);
-			// JDBC 4+ can handle LocalDateTime via setObject
-			ps.setObject(5, depart);
-			ps.setObject(6, arrive);
-			ps.setString(7, operatingDays);
-			ps.setInt(8, flightId);
-
-			int rows = ps.executeUpdate();
-			return rows > 0;
-		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -1411,6 +1403,116 @@ public class MySQL {
 		return executeUpdate(sql, customerID, flightID, seatNumber, className, ticketFare, bookingFee) > 0;
 	}
 	
+	public boolean updateAircraft(String aircraftID,
+            String airlineID,
+            String model,
+            int totalSeats,
+            String config) {
+String sql = """
+UPDATE Aircraft
+SET AirlineID           = ?,
+Model               = ?,
+TotalSeats          = ?,
+ClassConfigurations = ?
+WHERE AircraftID         = ?
+""";
+
+try (Connection c = getConnection();
+PreparedStatement ps = c.prepareStatement(sql)) {
+
+ps.setInt(1, Integer.parseInt(airlineID));
+ps.setString(2, model);
+ps.setInt(3, totalSeats);
+ps.setString(4, config);
+ps.setInt(5, Integer.parseInt(aircraftID));
+
+return ps.executeUpdate() > 0;
+} catch (SQLException e) {
+e.printStackTrace();
+return false;
+}
+}
+
+	
+	
+	/**
+	 * Fetch one aircraft by its primary key.
+	 */
+	public Map<String,Object> getAircraftByID(String aircraftID) {
+		String sql =
+				  "SELECT AircraftID, AirlineID, TotalSeats, Model, " +
+				  "       ClassConfigurations AS Config " +
+				  "  FROM Aircraft " +
+				  " WHERE AircraftID = ?";
+
+	    try (Connection conn = getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        ps.setString(1, aircraftID);
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next()) {
+	                Map<String,Object> m = new HashMap<>();
+	                m.put("AircraftID", rs.getString("AircraftID"));
+	                m.put("AirlineID",  rs.getInt   ("AirlineID"));
+	                m.put("Model",      rs.getString("Model"));
+	                m.put("TotalSeats", rs.getInt   ("TotalSeats"));
+	                m.put("Config",     rs.getString("Config"));
+	                return m;
+	            }
+	        }
+	    } catch (SQLException e) { 
+	        e.printStackTrace();    
+	    }
+	    return null;
+	}
+	
+	
+	// Change signature to accept a new int aircraftId
+	public boolean updateFlight(int flightId,
+	                            int flightNumber,
+	                            int airlineId,
+	                            String fromAirport,
+	                            String toAirport,
+	                            LocalDateTime depart,
+	                            LocalDateTime arrive,
+	                            String operatingDays,
+	                            int aircraftId)               // NEW
+	{
+	    String sql =
+	        "UPDATE Flight SET "
+	      + " FlightNumber  = ?,"
+	      + " AirlineID     = ?,"
+	      + " FromAirportID = ?,"
+	      + " ToAirportID   = ?,"
+	      + " DepartTime    = ?,"
+	      + " ArrivalTime   = ?,"
+	      + " OperatingDays = ?,"
+	      + " AircraftID    = ? "                  // NEW
+	      + "WHERE FlightID = ?";
+
+	    try (Connection con = getConnection();
+	         PreparedStatement ps = con.prepareStatement(sql)) {
+	        ps.setInt(1, flightNumber);
+	        ps.setInt(2, airlineId);
+	        ps.setString(3, fromAirport);
+	        ps.setString(4, toAirport);
+	        ps.setObject(5, depart);
+	        ps.setObject(6, arrive);
+	        ps.setString(7, operatingDays);
+	        ps.setInt(8, aircraftId);            // NEW
+	        ps.setInt(9, flightId);
+	        return ps.executeUpdate() > 0;
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+	
+	
+	public List<Map<String, Object>> getAllAircrafts() {
+	    String sql = "SELECT AircraftID, AirlineID, Model, TotalSeats, ClassConfigurations FROM Aircraft";
+	    return executeQuery(sql);
+	}
+
 	/**
 	 * Gets the next available seat number for a flight
 	 */
