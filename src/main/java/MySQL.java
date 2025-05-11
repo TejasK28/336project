@@ -702,5 +702,49 @@ public class MySQL {
 	        return emptyResult;
 	    }
 	}
+	
+	public List<Map<String, Object>> getReservationsByFlightNumber(String flightNumberValue) {
+        // Flight.FlightNumber is an INT.
+        String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
+                     "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+                     "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
+                     "FROM Ticket t " +
+                     "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                     "JOIN Flight f ON t.FlightID = f.FlightID " +
+                     "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                     "WHERE f.FlightNumber = ?";
+        try {
+            int fn = Integer.parseInt(flightNumberValue);
+            return executeQuery(sql, fn);
+        } catch (NumberFormatException e) {
+            System.err.println("Flight number search requires an integer. Value received: " + flightNumberValue + ". Error: " + e.getMessage());
+            return new ArrayList<>(); // Return empty list if format is wrong
+        }
+    }
+
+    public List<Map<String, Object>> getReservationsByCustomerName(String customerNamePart) {
+        String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
+                     "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+                     "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
+                     "FROM Ticket t " +
+                     "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                     "JOIN Flight f ON t.FlightID = f.FlightID " +
+                     "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                     "WHERE c.FirstName LIKE ? OR c.LastName LIKE ?";
+        String searchPattern = "%" + customerNamePart + "%";
+        return executeQuery(sql, searchPattern, searchPattern);
+    }
+
+    public List<Map<String, Object>> getReservationsByCustomerID(String customerID) {
+        String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
+                     "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+                     "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
+                     "FROM Ticket t " +
+                     "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                     "JOIN Flight f ON t.FlightID = f.FlightID " +
+                     "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                     "WHERE t.CustomerID = ?";
+        return executeQuery(sql, customerID);
+    }
 
 }
