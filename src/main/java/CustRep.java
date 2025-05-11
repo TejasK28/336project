@@ -17,9 +17,13 @@ import java.util.Map;
 /**
  * Servlet implementation class CustRep
  */
-@WebServlet({ "/CustRep/*", "/createFlight", "/createAircraft", 
-	"/createAirport", "/deleteFlight", "/deleteAirport",
-		"/editFlight", "/editAirport", "/deleteAircraft"})
+@WebServlet({
+    "/CustRep/*",
+    "/createFlight",  "/createAircraft",  "/createAirport",
+    "/deleteFlight",  "/deleteAirport",
+    "/editFlight",    "/editAirport",    "/editAircraft",   "/deleteAircraft"
+})
+
 public class CustRep extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -102,7 +106,16 @@ public class CustRep extends HttpServlet {
 			request.getRequestDispatcher("/viewAircrafts.jsp").forward(request, response);
 			return;
 		
-		} else {
+		} else if ("/CustRep".equals(request.getServletPath()) 
+		         && pathInfo.contains("/editAircraft")) {
+			  String acID = request.getParameter("aircraftID");
+			  request.setAttribute("aircraft", r.getAircraftByID(acID));
+			  request.setAttribute("airlines", r.getAllAirlines());
+			  request.getRequestDispatcher("/EditAircraft.jsp")
+			         .forward(request, response);
+			  return;
+			}
+			else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
 			return;
 		}
@@ -348,6 +361,55 @@ public class CustRep extends HttpServlet {
 				response.sendRedirect(referer);
 			}
 		}
+		
+		else if ("/editAircraft".equals(request.getServletPath())) {
+		    // 1. Read form parameters
+		    String acID       = request.getParameter("aircraftID");
+		    String airlineId  = request.getParameter("AirlineID");
+		    String model      = request.getParameter("Model");
+		    String totalStr   = request.getParameter("TotalSeats");
+		    String ecoStr     = request.getParameter("EconomySeats");
+		    String bizStr     = request.getParameter("BusinessSeats");
+		    String firstStr   = request.getParameter("FirstClassSeats");
+
+		    // 2. Parse & validate
+		    int total = Integer.parseInt(totalStr);
+		    int eco   = Integer.parseInt(ecoStr);
+		    int biz   = Integer.parseInt(bizStr);
+		    int first = Integer.parseInt(firstStr);
+
+		    if (eco + biz + first != total) {
+		        // validation failed → back to form
+		        request.setAttribute("error", "Class seats must sum to total seats.");
+		        // re-fetch aircraft + airlines so EditAircraft.jsp can populate fields
+		        request.setAttribute("aircraft", db.getAircraftByID(acID));
+		        request.setAttribute("airlines", db.getAllAirlines());
+		        request.getRequestDispatcher("/EditAircraft.jsp")
+		               .forward(request, response);
+		        return;
+		    }
+
+		    // 3. Build config string and call update
+		    String config = "E:" + eco + ",B:" + biz + ",F:" + first;
+		    boolean ok = db.updateAircraft(acID, airlineId, model, total, config);
+
+		    if (!ok) {
+		        // update failed → back to form
+		        request.setAttribute("error", "Failed to update aircraft.");
+		        request.setAttribute("aircraft", db.getAircraftByID(acID));
+		        request.setAttribute("airlines", db.getAllAirlines());
+		        request.getRequestDispatcher("/EditAircraft.jsp")
+		               .forward(request, response);
+		        return;
+		    }
+
+		    // 4. Success → redirect to dashboard
+		    response.sendRedirect(request.getContextPath() + "/CustRep");
+		    return;
+		}
+
+		
+		
 
 	}
 

@@ -46,7 +46,7 @@
             <td><%= String.valueOf(ac.get("ClassConfigurations")) %></td>
             <td>
            	
-           	<form method="get"	action="<%= request.getContextPath() + "/editAircraft" %>">
+           	<form action="${pageContext.request.contextPath}/CustRep/editAircraft" method="get">
            		<input type="hidden" name="aircraftID" value="<%= ac.get("AircraftID") %>">
            		<button type="submit" style="background-color: green;">Edit</button>	
            	</form>
