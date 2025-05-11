@@ -230,7 +230,7 @@
                                         <input type="hidden" name="flightId" value="<%= flight.get("FlightID") %>">
                                         <input type="hidden" name="className" value="<%= flight.get("Class") %>">
                                         <input type="hidden" name="flightPlanID" value="<%= request.getAttribute("flightPlanID") %>">
-                                        <button type="submit" class="action-button cancel-button">Cancel Ticket</button>
+                                        <button type="submit" class="action-button cancel-button" <%= "E".equals(flight.get("Class")) ? "disabled" : "" %>>Cancel Ticket</button>
                                     </form>
                                 <% } %>
                             </td>

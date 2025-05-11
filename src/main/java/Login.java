@@ -70,8 +70,8 @@ public class Login extends HttpServlet {
 			    // 3) Build the SQL
 			    String sql = "SELECT * FROM Flight WHERE FlightID IN (" + placeholders + ")";
 			    
-			    // 4) Execute using your helper’s varargs interface
-			    //    (It will bind each plan.get(i) to the i+1’th “?”.)
+			    // 4) Execute using your helper's varargs interface
+			    //    (It will bind each plan.get(i) to the i+1'th "?.")
 			    List<Map<String,Object>> flights = db.executeQuery(
 			        sql,
 			        plan.toArray(new String[0])
@@ -83,7 +83,16 @@ public class Login extends HttpServlet {
 			String uname = (String) request.getSession().getAttribute("uname");
 			request.setAttribute("reservedFlightPlans", db.getUserFlightPlans(uname));
 			
+			// Add scheduled flights attribute
+			request.setAttribute("scheduledFlights", db.getAllFlights(uname));
 			
+			// Add past flights attribute (assuming you have a method to get past flights)
+			List<Map<String, Object>> pastFlights = db.getPastFlights(uname);
+			System.out.println("Past flights size: " + pastFlights.size());
+			request.setAttribute("pastFlights", pastFlights);
+			
+			// Add waitlisted flights attribute
+			request.setAttribute("waitlistedFlights", db.getWaitlistedFlights(uname));
 			
 			RequestDispatcher dispatcher = request.getRequestDispatcher("Home.jsp");
 			dispatcher.forward(request, response);
