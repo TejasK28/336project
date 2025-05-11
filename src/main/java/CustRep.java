@@ -120,6 +120,21 @@ public class CustRep extends HttpServlet {
 			         .forward(request, response);
 			  return;
 			}
+		
+	else if ("/CustRep".equals(request.getServletPath())
+	         && pathInfo != null 
+	         && pathInfo.startsWith("/waitlist")) {
+	    // e.g. /CustRep/waitlist?flightId=123
+	    int fid = Integer.parseInt(request.getParameter("flightId"));
+	    List<Map<String,Object>> waitlist = r.getWaitingListByFlight(fid);
+	    request.setAttribute("waitlist", waitlist);
+	    // also pass flightId if you like
+	    request.setAttribute("flightId", fid);
+	    request.getRequestDispatcher("/Waitlist.jsp")
+	           .forward(request, response);
+	    return;
+	}
+		
 			else {
 			response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "GET method is not allowed on this route.");
 			return;

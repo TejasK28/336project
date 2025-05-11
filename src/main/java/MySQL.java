@@ -1577,5 +1577,17 @@ return false;
 			return false;
 		}
 	}
+	
+	
+	public List<Map<String,Object>> getWaitingListByFlight(int flightId) {
+	    String sql = 
+	      "SELECT wl.CustomerID, c.FirstName, c.LastName, " +
+	      "       wl.Class, wl.RequestDateTime " +
+	      "  FROM WaitingList wl " +
+	      "  JOIN Customer c ON wl.CustomerID = c.CustomerID " +
+	      " WHERE wl.FlightID = ?";
+	    return executeQuery(sql, flightId);
+	}
+
 
 }
