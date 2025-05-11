@@ -12,75 +12,75 @@
   <main class="main-content">
     <h1 class="page-title">Flights at Airport</h1>
 
-    <%
-      List<Map<String, Object>> flights =
-        (List<Map<String, Object>>) request.getAttribute("airport_flights");
-    %>
-    <%
-      if (flights != null && !flights.isEmpty()) {
-        Set<String> columns = flights.get(0).keySet();
+    <% List<Map<String, Object>> flights =
+         (List<Map<String, Object>>) request.getAttribute("airport_flights");
+       if (flights != null && !flights.isEmpty()) {
+         Set<String> columns = flights.get(0).keySet();
     %>
     <div class="table-container">
       <table>
         <thead>
           <tr>
-            <%-- existing dynamic columns --%>
-            <%
-              for (String col : columns) {
-            %>
+            <% for (String col : columns) { %>
               <th><div><%= col %></div></th>
-            <%
-              }
-            %>
-            <%-- add AircraftID header --%>
-            <th><div>AircraftID</div></th>
+            <% } %>
+            <th><div>Aircraft Model</div></th>
             <th><div>Actions</div></th>
           </tr>
         </thead>
         <tbody>
-          <%
-            for (Map<String, Object> flight : flights) {
-          %>
-          <tr>
-            <%-- existing dynamic cells --%>
-            <%
-              for (String col : columns) {
-            %>
-              <td><%= flight.get(col) %></td>
-            <%
-              }
-            %>
-            <%-- new AircraftID cell --%>
-            <td><%= flight.get("AircraftID") %></td>
-            <td class="actions">
-              <form action="<%=request.getContextPath()%>/CustRep/editFlight"
-                    method="get">
-                <input type="hidden" name="flightId"
-                       value="<%=flight.get("FlightID")%>" />
-                <button type="submit" style="background-color: green;">Edit</button>
-              </form>
-              <form action="<%=request.getContextPath()%>/deleteFlight"
-                    method="post">
-                <input type="hidden" name="flightId"
-                       value="<%=flight.get("FlightID")%>" />
-                <button type="submit" style="background-color: red;">Delete</button>
-              </form>
-            </td>
-          </tr>
-          <%
-            }
-          %>
+          <% for (Map<String, Object> flight : flights) { %>
+            <tr>
+              <% for (String col : columns) { %>
+                <td><%= flight.get(col) %></td>
+              <% } %>
+              <td><%= flight.get("AircraftModel") %></td>
+              <td class="actions">
+                <form action="<%=request.getContextPath()%>/CustRep/editFlight"
+                      method="get" style="display:inline-block;margin-right:5px;">
+                  <input type="hidden" name="flightId"
+                         value="<%=flight.get("FlightID")%>" />
+                  <button 
+                      type="submit" 
+                      style="
+                        background-color: #28a745;
+                        color: #fff;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 6px 12px;
+                        font-size: 0.9rem;
+                        cursor: pointer;
+                      ">
+                    Edit
+                  </button>
+                </form>
+                <form action="<%=request.getContextPath()%>/deleteFlight"
+                      method="post" style="display:inline-block;">
+                  <input type="hidden" name="flightId"
+                         value="<%=flight.get("FlightID")%>" />
+                  <button 
+                      type="submit" 
+                      style="
+                        background-color: #dc3545;
+                        color: #fff;
+                        border: none;
+                        border-radius: 4px;
+                        padding: 6px 12px;
+                        font-size: 0.9rem;
+                        cursor: pointer;
+                      ">
+                    Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% } %>
         </tbody>
       </table>
     </div>
-    <%
-      } else {
-    %>
-    <p>No flights found for this airport.</p>
-    <%
-      }
-    %>
-
+    <% } else { %>
+      <p>No flights found for this airport.</p>
+    <% } %>
   </main>
 </body>
 </html>
