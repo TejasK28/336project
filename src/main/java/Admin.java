@@ -174,8 +174,8 @@ public class Admin extends HttpServlet {
 		}
 
 		else if (request.getServletPath().equals("/EditCustomer")) {
-		    // 1) Pull every field out of the POST
-		    String custId    = request.getParameter("customerId");  // match your hidden input name
+		    // Pull every field out of the POST
+		    String custId    = request.getParameter("customerId"); 
 		    String password  = request.getParameter("Password");
 		    String firstName = request.getParameter("FirstName");
 		    String lastName  = request.getParameter("LastName");
