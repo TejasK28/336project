@@ -221,10 +221,21 @@
                                         <input type="hidden" name="flightPlanID" value="<%= request.getAttribute("flightPlanID") %>">
                                         <button type="submit" class="action-button purchase-button">Purchase</button>
                                     </form>
-                                <% } else if ("Waitlisted".equals(status)) { %>
-                                    <button class="action-button waitlist-button button-disabled" disabled>
-                                        Waitlisted
-                                    </button>
+                                <% } else if ("Waitlisted".equals(status)) { 
+                                    boolean hasAvailableSeats = (Boolean)flight.get("hasAvailableSeats");
+                                    if (hasAvailableSeats) { %>
+                                        <form action="<%= request.getContextPath() %>/PurchaseTicket" method="post" class="purchase-form">
+                                            <input type="hidden" name="flightID" value="<%= flight.get("FlightID") %>">
+                                            <input type="hidden" name="className" value="<%= flight.get("Class") %>">
+                                            <input type="hidden" name="ticketFare" value="<%= flight.get("StandardFare") %>">
+                                            <input type="hidden" name="flightPlanID" value="<%= request.getAttribute("flightPlanID") %>">
+                                            <button type="submit" class="action-button purchase-button">Purchase Available Seat</button>
+                                        </form>
+                                    <% } else { %>
+                                        <button class="action-button waitlist-button button-disabled" disabled>
+                                            Waitlisted
+                                        </button>
+                                    <% } %>
                                 <% } else if ("Confirmed".equals(status)) { %>
                                     <form action="<%= request.getContextPath() %>/CancelTicket" method="post" class="cancel-form">
                                         <input type="hidden" name="flightId" value="<%= flight.get("FlightID") %>">

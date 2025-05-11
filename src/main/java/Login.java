@@ -35,8 +35,7 @@ public class Login extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		String path = request.getServletPath();
-		  HttpSession sess = request.getSession();
-		
+		HttpSession sess = request.getSession();
 		
 		// TODO Auto-generated method stub
 		  if ("/AdminLogin".equals(path)) {
@@ -92,7 +91,20 @@ public class Login extends HttpServlet {
 			request.setAttribute("pastFlights", pastFlights);
 			
 			// Add waitlisted flights attribute
-			request.setAttribute("waitlistedFlights", db.getWaitlistedFlights(uname));
+			List<Map<String, Object>> waitlistedFlights = db.getWaitlistedFlights(uname);
+			request.setAttribute("waitlistedFlights", waitlistedFlights);
+			
+			// Check for available seats in waitlisted flights
+			List<Map<String, Object>> availableWaitlistedFlights = new ArrayList<>();
+			for (Map<String, Object> flight : waitlistedFlights) {
+				int flightId = (int) flight.get("FlightID");
+				int availableSeats = db.getAvailableSeats(flightId);
+				if (availableSeats > 0) {
+					flight.put("availableSeats", availableSeats);
+					availableWaitlistedFlights.add(flight);
+				}
+			}
+			request.setAttribute("availableWaitlistedFlights", availableWaitlistedFlights);
 			
 			RequestDispatcher dispatcher = request.getRequestDispatcher("Home.jsp");
 			dispatcher.forward(request, response);

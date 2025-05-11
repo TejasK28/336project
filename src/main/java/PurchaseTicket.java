@@ -68,6 +68,15 @@ public class PurchaseTicket extends HttpServlet {
                 // Create the ticket (seat number will be automatically assigned)
                 System.out.println("DEBUG: Seats available, attempting to create ticket");
                 if (db.createTicket(customerID, flightID, className, ticketFare)) {
+                    // Remove from waitlist if customer was on it
+                    String removeFromWaitlistSQL = "DELETE FROM WaitingList WHERE CustomerID = ? AND FlightID = ?";
+                    try {
+                        db.executeUpdate(removeFromWaitlistSQL, customerID, flightID);
+                        System.out.println("DEBUG: Removed from waitlist if present");
+                    } catch (Exception e) {
+                        System.out.println("DEBUG: Error removing from waitlist: " + e.getMessage());
+                        // Continue anyway since the ticket was created successfully
+                    }
                     request.setAttribute("message", "Ticket purchased successfully!");
                     System.out.println("DEBUG: Successfully created ticket");
                 } else {

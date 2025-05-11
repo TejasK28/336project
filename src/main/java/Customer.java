@@ -59,6 +59,19 @@ public class Customer extends HttpServlet {
 			List<Map<String, Object>> flights = db.getAllFlightsInFlightPlan(flightPlanID);
 			System.out.println("Found " + (flights != null ? flights.size() : 0) + " flights in plan");
 			
+			// For each waitlisted flight, check if seats are available
+			if (flights != null) {
+				for (Map<String, Object> flight : flights) {
+					if ("Waitlisted".equals(flight.get("status"))) {
+						boolean hasAvailableSeats = db.hasAvailableSeats(
+							(Integer)flight.get("FlightID"), 
+							(String)flight.get("Class")
+						);
+						flight.put("hasAvailableSeats", hasAvailableSeats);
+					}
+				}
+			}
+			
 			// Set the flights as an attribute for the JSP
 			request.setAttribute("flights", flights);
 			request.setAttribute("flightPlanID", flightPlanID);

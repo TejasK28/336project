@@ -42,12 +42,12 @@ The above are the project specifications that are required to run this properly.
 
 ✅ Browse questions and answers  
 ✅ Search questions and answers by keywords  
-❌ Make flight reservations/buy the ticket  
-❌ Enter the waiting list if the flight is full  
-❌ View all the past flight reservations with their details  
-❌ View all the upcoming flights with their details  
-❌ Cancel their flight reservations (if it is business or first class)  
-❌ Send an alert to customers in the waiting list that there is an empty seat  
+✅ Make flight reservations/buy the ticket  
+✅ Enter the waiting list if the flight is full  
+✅ View all the past flight reservations with their details  
+✅ View all the upcoming flights with their details  
+✅ Cancel their flight reservations (if it is business or first class)  
+✅ Send an alert to customers in the waiting list that there is an empty seat  
 ✅ Post questions to the customer representative  
 
 ---

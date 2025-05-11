@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-
 public class MySQL {
 
     private String dburl = "jdbc:mysql://localhost:3306/project";
@@ -365,30 +364,19 @@ public class MySQL {
     }
 
     public List<Map<String, Object>> getAllAirports() {
-        // TODO Auto-generated method stub
-        String sql = "SELECT * FROM Airport";
-        List<Map<String, Object>> airportList = new ArrayList<>();
-
-        try (Connection con = getConnection();
-                PreparedStatement ps = con.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                Map<String, Object> airport = new HashMap<>();
-                airport.put("AirportID", rs.getString("AirportID"));
-                airport.put("Name", rs.getString("Name"));
-                airport.put("City", rs.getString("City"));
-                airport.put("Country", rs.getString("Country"));
-
-                airportList.add(airport);
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            // depending on your needs, you could return an empty list or null here
-        }
-
-        return airportList;
+        String sql = "SELECT a.*, " +
+                    "COALESCE(d.numDeparting, 0) as numDeparting, " +
+                    "COALESCE(r.numArriving, 0) as numArriving " +
+                    "FROM Airport a " +
+                    "LEFT JOIN (SELECT FromAirportID as AirportID, COUNT(*) as numDeparting " +
+                    "          FROM Flight GROUP BY FromAirportID) d " +
+                    "ON a.AirportID = d.AirportID " +
+                    "LEFT JOIN (SELECT ToAirportID as AirportID, COUNT(*) as numArriving " +
+                    "          FROM Flight GROUP BY ToAirportID) r " +
+                    "ON a.AirportID = r.AirportID " +
+                    "ORDER BY a.AirportID";
+        
+        return executeQuery(sql);
     }
 
     public List<Map<String, Object>> getAllAirlines() {
@@ -988,7 +976,7 @@ public class MySQL {
             System.err.println("Flight number search requires an integer. Value received: " + flightNumberValue + ". Error: " + e.getMessage());
             return new ArrayList<>(); // Return empty list if format is wrong
         }
-    }
+    } 
 
     public List<Map<String, Object>> getReservationsByCustomerName(String customerNamePart) {
         String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
@@ -1243,10 +1231,16 @@ public class MySQL {
         }
     }
     
-    // private int getNextSeatNumber(int flightID) {
-    // 	String sql = "SELECT COUNT(*)+1 as seatNum FROM Ticket WHERE FlightID = ?";
-    // 	return Integer.valueOf((String) executeQuery(sql, flightID).get(0).get("seatNum"));
-    // }
+    /**
+     * Gets the next available seat number for a flight
+     */
+    public int getNextSeatNumber(int flightID) {
+        String sql = "SELECT COALESCE(MAX(SeatNumber), 0) + 1 as nextSeat " +
+                    "FROM Ticket " +
+                    "WHERE FlightID = ?";
+        List<Map<String, Object>> results = executeQuery(sql, flightID);
+        return ((Number) results.get(0).get("nextSeat")).intValue();
+    }
     
     public boolean createTicket(int flightID, float ticketFare, String className) {
         String sql = 
@@ -1655,17 +1649,6 @@ return false;
     }
 
     /**
-     * Gets the next available seat number for a flight
-     */
-    private int getNextSeatNumber(int flightID) {
-        String sql = "SELECT COALESCE(MAX(SeatNumber), 0) + 1 as nextSeat " +
-                    "FROM Ticket " +
-                    "WHERE FlightID = ?";
-        List<Map<String, Object>> results = executeQuery(sql, flightID);
-        return ((Number) results.get(0).get("nextSeat")).intValue();
-    }
-
-    /**
      * Cancels a ticket for a customer
      * @param customerID The ID of the customer
      * @param flightId The ID of the flight
@@ -1754,7 +1737,18 @@ return false;
     }
 
     public List<Map<String, Object>> getWaitlistedFlights(String customerID) {
-        String sql = "SELECT w.*, f.* FROM WaitingList w JOIN Flight f ON w.FlightID = f.FlightID WHERE w.CustomerID = ?";
+        String sql = "SELECT w.CustomerID, w.FlightID, w.Class, w.RequestDateTime, " +
+                    "f.FlightNumber, f.DepartTime, f.ArrivalTime, f.Duration, f.StandardFare, " +
+                    "a.Name as airline_name, " +
+                    "dep.Name as departure_airport, dep.City as departure_city, dep.Country as departure_country, " +
+                    "arr.Name as arrival_airport, arr.City as arrival_city, arr.Country as arrival_country " +
+                    "FROM WaitingList w " +
+                    "JOIN Flight f ON w.FlightID = f.FlightID " +
+                    "JOIN Airline a ON f.AirlineID = a.AirlineID " +
+                    "JOIN Airport dep ON f.FromAirportID = dep.AirportID " +
+                    "JOIN Airport arr ON f.ToAirportID = arr.AirportID " +
+                    "WHERE w.CustomerID = ? " +
+                    "ORDER BY w.RequestDateTime ASC";
         return executeQuery(sql, customerID);
     }
     
@@ -1771,5 +1765,28 @@ return false;
     }
 
 
+    public int getAvailableSeats(int flightId) {
+        String sql = "SELECT " +
+                     "  a.TotalSeats - COUNT(t.SeatNumber) as available_seats " +
+                     "FROM Flight f " +
+                     "JOIN Aircraft a ON f.AircraftID = a.AircraftID " +
+                     "LEFT JOIN Ticket t ON f.FlightID = t.FlightID " +
+                     "WHERE f.FlightID = ? " +
+                     "GROUP BY a.TotalSeats";
+        
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            
+            ps.setInt(1, flightId);
+            ResultSet rs = ps.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getInt("available_seats");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 
 }

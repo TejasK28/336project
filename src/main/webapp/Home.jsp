@@ -223,26 +223,45 @@
         <th>Duration</th>
         <th>Class</th>
         <th>Price</th>
+        <th>Available Seats</th>
+        <th>Action</th>
     </tr>
     <% 
     List<Map<String, Object>> waitlistedFlights = (List<Map<String, Object>>) request.getAttribute("waitlistedFlights");
+    List<Map<String, Object>> availableWaitlistedFlights = (List<Map<String, Object>>) request.getAttribute("availableWaitlistedFlights");
     if (waitlistedFlights != null && !waitlistedFlights.isEmpty()) {
-        for (Map<String, Object> flight : waitlistedFlights) { %>
+        for (Map<String, Object> flight : waitlistedFlights) { 
+            boolean isAvailable = false;
+            int availableSeats = 0;
+            if (availableWaitlistedFlights != null) {
+                for (Map<String, Object> availableFlight : availableWaitlistedFlights) {
+                    if (availableFlight.get("FlightID").equals(flight.get("FlightID"))) {
+                        isAvailable = true;
+                        availableSeats = (int) availableFlight.get("availableSeats");
+                        break;
+                    }
+                }
+            }
+    %>
             <tr>
                 <td><%= flight.get("FlightNumber") %></td>
-                <td><%= flight.get("AirlineName") %></td>
-                <td><%= flight.get("FromAirportID") %></td>
-                <td><%= flight.get("ToAirportID") %></td>
-                <td><%= flight.get("DepartureTime") %></td>
+                <td><%= flight.get("airline_name") %></td>
+                <td><%= flight.get("departure_airport") %> (<%= flight.get("departure_city") %>, <%= flight.get("departure_country") %>)</td>
+                <td><%= flight.get("arrival_airport") %> (<%= flight.get("arrival_city") %>, <%= flight.get("arrival_country") %>)</td>
+                <td><%= flight.get("DepartTime") %></td>
                 <td><%= flight.get("ArrivalTime") %></td>
-                <td><%= flight.get("Duration") %></td>
+                <td><%= flight.get("Duration") %> minutes</td>
                 <td><%= flight.get("Class") %></td>
-                <td><%= flight.get("Price") %></td>
+                <td>$<%= flight.get("StandardFare") %></td>
+                <td><%= availableSeats %></td>
+                <td>
+                    <span class="waitlist-status">On Waitlist</span>
+                </td>
             </tr>
         <% }
     } else { %>
         <tr>
-            <td colspan="9">No waitlisted flights found.</td>
+            <td colspan="11">No waitlisted flights found.</td>
         </tr>
     <% } %>
 </table>
