@@ -1598,7 +1598,7 @@ return false;
                     "JOIN Airport dep ON f.FromAirportID = dep.AirportID " +
                     "JOIN Airport arr ON f.ToAirportID = arr.AirportID " +
                     "WHERE f.DepartTime < NOW() " + 
-                    "AND t.CustomerID = ? " +
+                    "AND t.CustomerID = ? " + 
                     "ORDER BY f.DepartTime DESC";
         return executeQuery(sql, customerID);
     }
