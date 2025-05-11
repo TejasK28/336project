@@ -25,7 +25,10 @@ import java.util.Map;
     "/createFlight",
     "/createAircraft",
     "/createAirport",
-    "/CustRep/waitlist"
+    "/CustRep/waitlist",
+    "/CustRep/createFlight",
+    "/CustRep/createAircraft",
+    "/CustRep/createAirport"
 })
 public class CustRep extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -328,7 +331,7 @@ public class CustRep extends HttpServlet {
             return;
         }
 
-        if ("/editAircraft".equals(servletPath)) {
+        if ("/CustRep/editAircraft".equals(servletPath)) {
             // --- existing editAircraft POST logic ---
             String acID      = request.getParameter("aircraftID");
             String airlineId = request.getParameter("AirlineID");
