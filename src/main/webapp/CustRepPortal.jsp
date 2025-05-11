@@ -234,5 +234,22 @@
             el.style.display = 'none'; return true;
         }
     </script>
+    
+    
+    
+    <!-- This code focuses on browsing question as a customer rep -->
+    <a href="${pageContext.request.contextPath}/ListQuestions">🔎 View all customer questions</a>
+    
+    
+    <!-- Search form for reps -->
+<section class="search-questions">
+  <form action="${pageContext.request.contextPath}/SearchQuestions" method="get">
+    <label for="searchQ">Search Q&A:</label>
+    <input type="text" id="searchQ" name="q" placeholder="keyword…">
+    <button type="submit">🔎</button>
+  </form>
+</section>
+    
+    
 </body>
 </html>
