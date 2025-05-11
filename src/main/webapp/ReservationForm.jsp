@@ -1,68 +1,79 @@
-<%@ page import="java.util.Map" %>
+<%@ page import="java.util.List,java.util.Map,java.time.LocalDateTime,java.time.format.DateTimeFormatter" %>
 <%
-  Map<String,Object> t    = (Map<String,Object>)request.getAttribute("ticket");
-  boolean            edit = (t != null);
-  String             cust = (String)request.getAttribute("customerId");
+  @SuppressWarnings("unchecked")
+  Map<String,Object> ticket   = (Map<String,Object>) request.getAttribute("ticket");
+  @SuppressWarnings("unchecked")
+  List<Map<String,Object>> flights = (List<Map<String,Object>>) request.getAttribute("flights");
+  String custId = (String) request.getAttribute("customerId");
+  boolean editing = (ticket != null);
+
+  // prepare a formatter once
+  DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 %>
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8">
-<title><%= edit? "Edit":"New" %> Reservation</title>
+<head>
+  <meta charset="UTF-8">
+  <title><%= editing ? "Edit" : "New" %> Reservation</title>
 </head>
 <body>
-  <h1><%= edit? "Edit":"New" %> Reservation</h1>
+  <h1><%= editing ? "Edit" : "New" %> Reservation</h1>
 
   <form method="post"
-        action="<%=request.getContextPath()%>/CustRep/reservation/<%= edit? "update":"create" %>">
-    <input type="hidden" name="customerId" value="<%=cust%>"/>
-    <% if (edit) { %>
-      <input type="hidden" name="oldFlightId" value="<%=t.get("FlightID")%>"/>
-      <input type="hidden" name="oldSeatNo"   value="<%=t.get("SeatNumber")%>"/>
+        action="${pageContext.request.contextPath}/CustRep/reservation/<%= editing ? "update" : "create" %>">
+
+    <!-- always send customerId -->
+    <input type="hidden" name="customerId" value="<%= custId %>"/>
+
+    <% if (editing) { %>
+      <!-- so update knows what to delete first -->
+      <input type="hidden" name="oldFlightId" value="<%= ticket.get("FlightID") %>"/>
+      <input type="hidden" name="oldSeatNo"   value="<%= ticket.get("SeatNumber") %>"/>
     <% } %>
 
-    <label>Flight:
-      <select name="flightId">
-        <% 
-           for (Map<String,Object> f : (java.util.List<Map<String,Object>>)request.getAttribute("flights")) {
-             int   id    = ((Number)f.get("FlightID")).intValue();
-             int   num   = ((Number)f.get("FlightNumber")).intValue();
-             String frm  = (String)f.get("FromAirportID");
-             String to   = (String)f.get("ToAirportID");
-             boolean sel = edit && id == ((Number)t.get("FlightID")).intValue();
+    <p>
+      <label for="flight">Flight:</label>
+      <select name="flightId" id="flight" required>
+        <option value="">-- select flight --</option>
+        <% for (Map<String,Object> f : flights) {
+             int   fid  = ((Number)f.get("FlightID")).intValue();
+             int   num  = ((Number)f.get("FlightNumber")).intValue();
+             String from= (String)f.get("FromAirportID");
+             String to  = (String)f.get("ToAirportID");
+             // now a LocalDateTime
+             LocalDateTime dt = (LocalDateTime) f.get("DepartTime");
+             boolean sel = editing && fid == ((Number)ticket.get("FlightID")).intValue();
         %>
-          <option value="<%=id%>" <%= sel? "selected":"" %>>
-            <%= num %> - <%= frm %> - <%= to %>
+          <option value="<%=fid%>" <%= sel ? "selected" : "" %>>
+            <%= num %> : <%= fmt.format(dt) %>
           </option>
         <% } %>
       </select>
-    </label>
-    <br/>
+    </p>
 
-    <label>Class:
-      <select name="travelClass">
-        <% for (String c : new String[]{"Economy","Business","First"}) {
-             boolean sel = edit && c.equals(t.get("Class"));
-        %>
-          <option <%= sel? "selected":"" %>><%=c%></option>
-        <% } %>
+    <p>
+      <label for="cls">Class:</label>
+      <select name="travelClass" id="cls" required>
+        <option value="Economy"  <%= editing && "Economy".equals(ticket.get("Class"))  ? "selected" : "" %>>Economy</option>
+        <option value="Business" <%= editing && "Business".equals(ticket.get("Class")) ? "selected" : "" %>>Business</option>
+        <option value="First"    <%= editing && "First".equals(ticket.get("Class"))    ? "selected" : "" %>>First</option>
       </select>
-    </label>
-    <br/>
+    </p>
 
-    <label>Fare:
-      <input type="number" name="fare" step="0.01" required
-             value="<%= edit? t.get("TicketFare") : "" %>"/>
-    </label>
-    <br/>
+    <p>
+      <label for="fare">Fare:</label>
+      <input type="number" step="0.01" name="fare" id="fare"
+             value="<%= editing ? ticket.get("TicketFare") : "" %>" required/>
+    </p>
 
-    <button type="submit"><%= edit? "Update":"Create" %></button>
+    <p>
+      <button type="submit"><%= editing ? "Update" : "Book" %></button>
+      <!-- no stray spaces in this URL -->
+      <a href="${pageContext.request.contextPath}/CustRep/reservations?customerId=<%=custId%>">
+        Back
+      </a>
+    </p>
+
   </form>
-
-  <p>
-    <a href="<%=request.getContextPath()%>/CustRep/reservations
-             ?customerId=<%=cust%>">
-      Back
-    </a>
-  </p>
 </body>
 </html>

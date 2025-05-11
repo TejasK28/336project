@@ -1757,6 +1757,19 @@ return false;
         String sql = "SELECT w.*, f.* FROM WaitingList w JOIN Flight f ON w.FlightID = f.FlightID WHERE w.CustomerID = ?";
         return executeQuery(sql, customerID);
     }
+    
+    /**
+     * Return every upcoming flight (no JOIN on Ticket).
+     */
+    public List<Map<String,Object>> getAllFlightOptions() {
+        String sql =
+          "SELECT FlightID, FlightNumber, FromAirportID, ToAirportID, DepartTime "
+        + "FROM Flight "
+        + "WHERE DepartTime >= NOW() "
+        + "ORDER BY DepartTime";
+        return executeQuery(sql);
+    }
+
 
 
 }
