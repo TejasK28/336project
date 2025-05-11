@@ -1443,97 +1443,13 @@ return false;
 }
 }
 
+	
+	
+	
+	
+	
 
-	
-	
-	/**
-	 * Fetch one aircraft by its primary key.
-	 */
-	public Map<String,Object> getAircraftByID(String aircraftID) {
-		String sql =
-				  "SELECT AircraftID, AirlineID, TotalSeats, Model, " +
-				  "       ClassConfigurations AS Config " +
-				  "  FROM Aircraft " +
-				  " WHERE AircraftID = ?";
 
-	    try (Connection conn = getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setString(1, aircraftID);
-	        try (ResultSet rs = ps.executeQuery()) {
-	            if (rs.next()) {
-	                Map<String,Object> m = new HashMap<>();
-	                m.put("AircraftID", rs.getString("AircraftID"));
-	                m.put("AirlineID",  rs.getInt   ("AirlineID"));
-	                m.put("Model",      rs.getString("Model"));
-	                m.put("TotalSeats", rs.getInt   ("TotalSeats"));
-	                m.put("Config",     rs.getString("Config"));
-	                return m;
-	            }
-	        }
-	    } catch (SQLException e) { 
-	        e.printStackTrace();    
-	    }
-	    return null;
-	}
-	
-	
-	// Change signature to accept a new int aircraftId
-	public boolean updateFlight(int flightId,
-	                            int flightNumber,
-	                            int airlineId,
-	                            String fromAirport,
-	                            String toAirport,
-	                            LocalDateTime depart,
-	                            LocalDateTime arrive,
-	                            String operatingDays,
-	                            int aircraftId)               // NEW
-	{
-	    String sql =
-	        "UPDATE Flight SET "
-	      + " FlightNumber  = ?,"
-	      + " AirlineID     = ?,"
-	      + " FromAirportID = ?,"
-	      + " ToAirportID   = ?,"
-	      + " DepartTime    = ?,"
-	      + " ArrivalTime   = ?,"
-	      + " OperatingDays = ?,"
-	      + " AircraftID    = ? "                  // NEW
-	      + "WHERE FlightID = ?";
-
-	    try (Connection con = getConnection();
-	         PreparedStatement ps = con.prepareStatement(sql)) {
-	        ps.setInt(1, flightNumber);
-	        ps.setInt(2, airlineId);
-	        ps.setString(3, fromAirport);
-	        ps.setString(4, toAirport);
-	        ps.setObject(5, depart);
-	        ps.setObject(6, arrive);
-	        ps.setString(7, operatingDays);
-	        ps.setInt(8, aircraftId);            // NEW
-	        ps.setInt(9, flightId);
-	        return ps.executeUpdate() > 0;
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	        return false;
-	    }
-	}
-	
-	
-	public List<Map<String, Object>> getAllAircrafts() {
-	    String sql = "SELECT AircraftID, AirlineID, Model, TotalSeats, ClassConfigurations FROM Aircraft";
-	    return executeQuery(sql);
-	}
-
-	/**
-	 * Gets the next available seat number for a flight
-	 */
-	private int getNextSeatNumber(int flightID) {
-		String sql = "SELECT COALESCE(MAX(SeatNumber), 0) + 1 as nextSeat " +
-					"FROM Ticket " +
-					"WHERE FlightID = ?";
-		List<Map<String, Object>> results = executeQuery(sql, flightID);
-		return ((Number) results.get(0).get("nextSeat")).intValue();
-	}
 
 	/**
 	 * Cancels a ticket for a customer
@@ -1571,24 +1487,6 @@ return false;
 // 		}
 // 	}
 
-	/**
-	 * Updates the status of an itinerary segment
-	 * @param flightPlanID The ID of the flight plan
-	 * @param flightId The ID of the flight
-	 * @param className The class of the ticket
-	 * @param status The new status (e.g., "Confirmed", "Waitlisted")
-	 * @return true if the update was successful
-	 */
-	public boolean updateItinerarySegmentStatus(String flightPlanID, int flightId, String className, String status) {
-		String sql = "UPDATE ItinerarySegment SET Status = ? WHERE FlightPlanID = ? AND FlightID = ? AND Class = ?";
-		try {
-			return executeUpdate(sql, status, flightPlanID, flightId, className) > 0;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-	
 	
 	public List<Map<String,Object>> getWaitingListByFlight(int flightId) {
 	    String sql = 
