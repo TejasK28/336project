@@ -1,5 +1,3 @@
-
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -52,7 +50,20 @@ public class Customer extends HttpServlet {
 		    request.setAttribute("flights", flights);
 		    request.getRequestDispatcher("/MakeRes.jsp").forward(request, response);
 		}
-		else if ("/ViewFlightPlan".equals(request.getContextPath()) && pathInfo != null) {
+		else if ("/ViewFlightPlan".equals(request.getServletPath())) {
+			// Extract the flight plan ID from the path
+			String flightPlanID = pathInfo.substring(1); // Remove the leading slash
+			System.out.println("Viewing flight plan ID: " + flightPlanID);
+			
+			// Get all flights in the flight plan
+			List<Map<String, Object>> flights = db.getAllFlightsInFlightPlan(flightPlanID);
+			System.out.println("Found " + (flights != null ? flights.size() : 0) + " flights in plan");
+			
+			// Set the flights as an attribute for the JSP
+			request.setAttribute("flights", flights);
+			request.setAttribute("flightPlanID", flightPlanID);
+			
+			// Forward to the view flight plan page
 			request.getRequestDispatcher("/ViewFlightPlan.jsp").forward(request, response);
 		}
 	}
