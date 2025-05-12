@@ -32,9 +32,9 @@ The above are the project specifications that are required to run this properly.
 
 # Credentials
 
-Customer : CUST001/pass
-Admin: admin/adminpass
-Customer Rep : admin/adminpass (you can also login as admin and add more as you wish and check them as customer rep)
+1. Customer : CUST001/pass
+2. Admin: admin/adminpass
+3. Customer Rep : admin/adminpass (you can also login as admin and add more as you wish and check them as customer rep)
 
 ## User Functionality
 
