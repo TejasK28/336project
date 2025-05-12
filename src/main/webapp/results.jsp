@@ -45,16 +45,131 @@ for (Map<String, Object> f : allFlights) {
 <link rel="stylesheet"
 	href="<%=request.getContextPath()%>/css/styles.css" />
 <script>
-	/* your filterFlights JS unchanged… */
+function filterFlights() {
+    const minPrice = document.getElementById('minPrice').value;
+    const maxPrice = document.getElementById('maxPrice').value;
+    const stops = document.getElementById('stops').value;
+    const airline = document.getElementById('airline').value;
+    const takeoffTime = document.getElementById('takeoffTime').value;
+    const landingTime = document.getElementById('landingTime').value;
+    
+    const rows = document.querySelectorAll('.flight-row');
+    
+    rows.forEach(row => {
+        const price = parseFloat(row.dataset.price);
+        const rowAirline = row.dataset.airline;
+        const rowTakeoff = row.dataset.takeoff;
+        const rowLanding = row.dataset.landing;
+        const hasStop = row.querySelector('td:nth-child(2)').textContent.includes('(stop)');
+        
+        // Price filter
+        let priceMatch = true;
+        if (minPrice !== '') {
+            priceMatch = priceMatch && price >= parseFloat(minPrice);
+        }
+        if (maxPrice !== '') {
+            priceMatch = priceMatch && price <= parseFloat(maxPrice);
+        }
+        
+        // Stops filter
+        let stopsMatch = true;
+        if (stops === 'no-stops') {
+            stopsMatch = !hasStop;
+        }
+        
+        // Airline filter
+        let airlineMatch = airline === 'all' || rowAirline === airline.toLowerCase();
+        
+        // Takeoff time filter
+        let takeoffMatch = takeoffTime === 'all' || rowTakeoff === takeoffTime;
+        
+        // Landing time filter
+        let landingMatch = landingTime === 'all' || rowLanding === landingTime;
+        
+        // Show/hide row based on all filters
+        row.style.display = (priceMatch && stopsMatch && airlineMatch && takeoffMatch && landingMatch) ? '' : 'none';
+    });
+}
 </script>
 </head>
 <body>
 	<jsp:include page="header.jsp" />
 
 	<h2>Filter Flights</h2>
-	<form onsubmit="return false;">
-		<!-- same filter inputs, using airlines/takeoffTimes/landingTimes -->
-	</form>
+	<div class="filters">
+		<form onsubmit="return false;">
+			<div class="filter-group">
+				<label for="priceRange">Price Range:</label>
+				<input type="number" id="minPrice" placeholder="Min $" min="0" step="0.01" onchange="filterFlights()" />
+				<input type="number" id="maxPrice" placeholder="Max $" min="0" step="0.01" onchange="filterFlights()" />
+			</div>
+
+			<div class="filter-group">
+				<label for="stops">Stops:</label>
+				<select id="stops" onchange="filterFlights()">
+					<option value="all">All Flights</option>
+					<option value="no-stops">Direct Flights Only</option>
+				</select>
+			</div>
+
+			<div class="filter-group">
+				<label for="airline">Airline:</label>
+				<select id="airline" onchange="filterFlights()">
+					<option value="all">All Airlines</option>
+					<% for (String airline : airlines) { %>
+						<option value="<%=airline.toLowerCase()%>"><%=airline%></option>
+					<% } %>
+				</select>
+			</div>
+
+			<div class="filter-group">
+				<label for="takeoffTime">Take-off Time:</label>
+				<select id="takeoffTime" onchange="filterFlights()">
+					<option value="all">Any Time</option>
+					<% for (String time : takeoffTimes) { %>
+						<option value="<%=time%>"><%=time%></option>
+					<% } %>
+				</select>
+			</div>
+
+			<div class="filter-group">
+				<label for="landingTime">Landing Time:</label>
+				<select id="landingTime" onchange="filterFlights()">
+					<option value="all">Any Time</option>
+					<% for (String time : landingTimes) { %>
+						<option value="<%=time%>"><%=time%></option>
+					<% } %>
+				</select>
+			</div>
+		</form>
+	</div>
+
+	<style>
+	.filters {
+		margin: 20px 0;
+		padding: 15px;
+		background: #f5f5f5;
+		border-radius: 5px;
+	}
+	.filter-group {
+		display: inline-block;
+		margin-right: 20px;
+		margin-bottom: 10px;
+	}
+	.filter-group label {
+		margin-right: 5px;
+		font-weight: bold;
+	}
+	.filter-group select, .filter-group input {
+		padding: 5px;
+		border-radius: 3px;
+		border: 1px solid #ddd;
+		width: 100px;
+	}
+	.filter-group input[type="number"] {
+		margin-right: 5px;
+	}
+	</style>
 
 	<%
 	if ("roundtrip".equals(tripType)) {
