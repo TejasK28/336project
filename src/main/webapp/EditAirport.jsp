@@ -52,7 +52,20 @@
       value="<%= airport.get("Country") %>"
       required />
 
-    <button type="submit" class="btn-save">Save Changes</button>
+    <button
+  type="submit"
+  style="
+    background-color: #007bff;
+    color: #fff;
+    padding: 0.5em 1em;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  ">
+  Save Changes
+</button>
+
     <a href="<%= request.getContextPath() %>/CustRep" class="btn-cancel">Cancel</a>
   </form>
 </body>
