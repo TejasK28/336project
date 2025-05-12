@@ -949,187 +949,256 @@ public class MySQL {
                 Date.valueOf(departDate));
     }
 
+    /**
+     * Retrieves monthly sales report data.
+     * TicketFare and BookingFee are INT in the database. SUM will produce BIGINT or DECIMAL.
+     * We cast to DECIMAL in SQL or handle as BigDecimal in Java.
+     */
     public Map<String, Object> getMonthlySalesReport(int year, int month) {
+        // SQL query to count tickets and sum fares/fees, casting to DECIMAL for sums
         String sql = "SELECT " +
-                "COUNT(*) as numberOfTickets, " +
-                "COALESCE(SUM(TicketFare), 0) as totalFare, " +
-                "COALESCE(SUM(BookingFee), 0) as totalBookingFee, " +
-                "COALESCE(SUM(TicketFare + BookingFee), 0) as totalRevenue " +
-                "FROM Ticket " + // Ensure your table is named 'Ticket'
-                "WHERE YEAR(PurchaseDateTime) = ? AND MONTH(PurchaseDateTime) = ?";
+                     "COUNT(*) as numberOfTickets, " +
+                     "COALESCE(SUM(CAST(TicketFare AS DECIMAL(10,2))), 0.00) as totalFare, " +
+                     "COALESCE(SUM(CAST(BookingFee AS DECIMAL(10,2))), 0.00) as totalBookingFee, " +
+                     "COALESCE(SUM(CAST(TicketFare AS DECIMAL(10,2)) + CAST(BookingFee AS DECIMAL(10,2))), 0.00) as totalRevenue " +
+                     "FROM Ticket " + // Table name is Ticket
+                     "WHERE YEAR(PurchaseDateTime) = ? AND MONTH(PurchaseDateTime) = ?";
 
-        // 'executeQuery' is your existing method in MySQL.java
+        // Execute the query
         List<Map<String, Object>> results = executeQuery(sql, year, month);
 
+        // Process results
         if (!results.isEmpty() && results.get(0) != null) {
             Map<String, Object> reportData = results.get(0);
-            // Ensure all expected keys have non-null values, defaulting to 0 or BigDecimal.ZERO
-            // COUNT(*) in MySQL returns BIGINT (Long in Java)
-            reportData.putIfAbsent("numberOfTickets", 0L);
-            reportData.putIfAbsent("totalFare", java.math.BigDecimal.ZERO);
-            reportData.putIfAbsent("totalBookingFee", java.math.BigDecimal.ZERO);
-            reportData.putIfAbsent("totalRevenue", java.math.BigDecimal.ZERO);
+            // Ensure all expected keys have non-null values, defaulting if necessary
+            reportData.putIfAbsent("numberOfTickets", 0L); // COUNT(*) is typically Long
+            reportData.putIfAbsent("totalFare", BigDecimal.ZERO);
+            reportData.putIfAbsent("totalBookingFee", BigDecimal.ZERO);
+            reportData.putIfAbsent("totalRevenue", BigDecimal.ZERO);
             return reportData;
         } else {
-            // This case handles if executeQuery returns an empty list (e.g., on SQL error)
-            // or if the query itself correctly returns no rows (which COALESCE should handle by returning 0s)
+            // Return an empty/default map if no results
             Map<String, Object> emptyResult = new HashMap<>();
             emptyResult.put("numberOfTickets", 0L);
-            emptyResult.put("totalFare", java.math.BigDecimal.ZERO);
-            emptyResult.put("totalBookingFee", java.math.BigDecimal.ZERO);
-            emptyResult.put("totalRevenue", java.math.BigDecimal.ZERO);
+            emptyResult.put("totalFare", BigDecimal.ZERO);
+            emptyResult.put("totalBookingFee", BigDecimal.ZERO);
+            emptyResult.put("totalRevenue", BigDecimal.ZERO);
             return emptyResult;
         }
     }
 
-    public List<Map<String, Object>> getReservationsByFlightNumber(String flightNumberValue) {
-        // Flight.FlightNumber is an INT.
-        String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
-                "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
-                "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
-                "FROM Ticket t " +
-                "JOIN Customer c ON t.CustomerID = c.CustomerID " +
-                "JOIN Flight f ON t.FlightID = f.FlightID " +
-                "JOIN Airline al ON f.AirlineID = al.AirlineID " +
-                "WHERE f.FlightNumber = ?";
-        try {
-            int fn = Integer.parseInt(flightNumberValue);
-            return executeQuery(sql, fn);
-        } catch (NumberFormatException e) {
-            System.err.println("Flight number search requires an integer. Value received: " + flightNumberValue + ". Error: " + e.getMessage());
-            return new ArrayList<>(); // Return empty list if format is wrong
-        }
-    } 
-
-    public List<Map<String, Object>> getReservationsByCustomerName(String customerNamePart) {
-        String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
-                "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
-                "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
-                "FROM Ticket t " +
-                "JOIN Customer c ON t.CustomerID = c.CustomerID " +
-                "JOIN Flight f ON t.FlightID = f.FlightID " +
-                "JOIN Airline al ON f.AirlineID = al.AirlineID " +
-                "WHERE c.FirstName LIKE ? OR c.LastName LIKE ?";
-        String searchPattern = "%" + customerNamePart + "%";
-        return executeQuery(sql, searchPattern, searchPattern);
+/**
+ * Retrieves reservations based on flight number.
+ * Constructs a DisplayTicketID from FlightID and SeatNumber.
+ * TicketFare and BookingFee are retrieved as Integers.
+ */
+public List<Map<String, Object>> getReservationsByFlightNumber(String flightNumberValue) {
+    // SQL query to get reservation details, constructing a display ticket ID
+    String sql = "SELECT CONCAT(t.FlightID, '-', t.SeatNumber) AS DisplayTicketID, " +
+                 "t.PurchaseDateTime, t.TicketFare, t.BookingFee, t.Class, t.SeatNumber, " +
+                 "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+                 "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, " +
+                 "al.Name as AirlineName " +
+                 "FROM Ticket t " +
+                 "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                 "JOIN Flight f ON t.FlightID = f.FlightID " +
+                 "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                 "WHERE f.FlightNumber = ?";
+    try {
+        // FlightNumber is an INT in the Flight table
+        int fn = Integer.parseInt(flightNumberValue);
+        return executeQuery(sql, fn);
+    } catch (NumberFormatException e) {
+        // Log error: Invalid flight number format
+        System.err.println("Flight number search requires an integer. Value received: " + flightNumberValue + ". Error: " + e.getMessage());
+        return new ArrayList<>(); // Return empty list for invalid format
     }
+}
 
-    public List<Map<String, Object>> getReservationsByCustomerID(String customerID) {
-        String sql = "SELECT t.TicketID, t.PurchaseDateTime, t.TicketFare, t.BookingFee, " +
-                "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
-                "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, al.Name as AirlineName " +
-                "FROM Ticket t " +
-                "JOIN Customer c ON t.CustomerID = c.CustomerID " +
-                "JOIN Flight f ON t.FlightID = f.FlightID " +
-                "JOIN Airline al ON f.AirlineID = al.AirlineID " +
-                "WHERE t.CustomerID = ?";
-        return executeQuery(sql, customerID);
-    }
+/**
+ * Retrieves reservations based on partial customer name.
+ * Constructs a DisplayTicketID. TicketFare and BookingFee are retrieved as Integers.
+ */
+public List<Map<String, Object>> getReservationsByCustomerName(String customerNamePart) {
+    // SQL query to get reservation details by customer name
+    String sql = "SELECT CONCAT(t.FlightID, '-', t.SeatNumber) AS DisplayTicketID, " +
+                 "t.PurchaseDateTime, t.TicketFare, t.BookingFee, t.Class, t.SeatNumber, " +
+                 "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+                 "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, " +
+                 "al.Name as AirlineName " +
+                 "FROM Ticket t " +
+                 "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                 "JOIN Flight f ON t.FlightID = f.FlightID " +
+                 "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                 "WHERE c.FirstName LIKE ? OR c.LastName LIKE ?";
+    String searchPattern = "%" + customerNamePart + "%"; // Prepare search pattern for LIKE
+    return executeQuery(sql, searchPattern, searchPattern);
+}
 
-    /**
-     * Finds the customer who has generated the most total revenue.
-     * Revenue is calculated as SUM(TicketFare + BookingFee).
-     * @return A Map containing CustomerID, FirstName, LastName, and TotalRevenue,
-     * or an empty map if no ticket data exists.
-     */
-    public Map<String, Object> getTopRevenueCustomer() {
-        String sql = "SELECT c.CustomerID, c.FirstName, c.LastName, " +
-                "SUM(t.TicketFare + t.BookingFee) AS TotalRevenue " +
-                "FROM Ticket t " +
-                "JOIN Customer c ON t.CustomerID = c.CustomerID " +
-                "GROUP BY c.CustomerID, c.FirstName, c.LastName " +
-                "ORDER BY TotalRevenue DESC " +
-                "LIMIT 1";
-        List<Map<String, Object>> results = executeQuery(sql);
-        if (!results.isEmpty()) {
-            return results.get(0);
-        }
-        return new HashMap<>(); // Return empty map if no results
-    }
+/**
+ * Retrieves reservations based on CustomerID.
+ * Constructs a DisplayTicketID. TicketFare and BookingFee are retrieved as Integers.
+ */
+public List<Map<String, Object>> getReservationsByCustomerID(String customerID) {
+    // SQL query to get reservation details by customer ID
+    String sql = "SELECT CONCAT(t.FlightID, '-', t.SeatNumber) AS DisplayTicketID, " +
+                 "t.PurchaseDateTime, t.TicketFare, t.BookingFee, t.Class, t.SeatNumber, " +
+                 "c.CustomerID, c.FirstName AS CustomerFirstName, c.LastName AS CustomerLastName, " +
+                 "f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, f.DepartTime, f.ArrivalTime, " +
+                 "al.Name as AirlineName " +
+                 "FROM Ticket t " +
+                 "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                 "JOIN Flight f ON t.FlightID = f.FlightID " +
+                 "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                 "WHERE t.CustomerID = ?";
+    return executeQuery(sql, customerID);
+}
 
-    /**
-     * Produces a list of most active flights based on the number of tickets sold.
-     * @param limit The number of top active flights to return.
-     * @return A List of Maps, each containing FlightID, FlightNumber, FromAirportID, ToAirportID, AirlineName and TicketCount.
-     */
-    public List<Map<String, Object>> getMostActiveFlights(int limit) {
-        String sql = "SELECT f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, al.Name AS AirlineName, " +
-                "COUNT(t.TicketID) AS TicketCount " +
-                "FROM Ticket t " +
-                "JOIN Flight f ON t.FlightID = f.FlightID " +
-                "JOIN Airline al ON f.AirlineID = al.AirlineID " +
-                "GROUP BY f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, al.Name " +
-                "ORDER BY TicketCount DESC " +
-                "LIMIT ?";
-        return executeQuery(sql, limit);
+/**
+ * Finds the customer who has generated the most total revenue.
+ * Revenue is SUM(TicketFare + BookingFee). These are INTs, sum can be BIGINT/DECIMAL.
+ */
+public Map<String, Object> getTopRevenueCustomer() {
+    // SQL query to find the top revenue-generating customer
+    String sql = "SELECT c.CustomerID, c.FirstName, c.LastName, " +
+                 "SUM(CAST(t.TicketFare AS DECIMAL(10,2)) + CAST(t.BookingFee AS DECIMAL(10,2))) AS TotalRevenue " +
+                 "FROM Ticket t " +
+                 "JOIN Customer c ON t.CustomerID = c.CustomerID " +
+                 "GROUP BY c.CustomerID, c.FirstName, c.LastName " +
+                 "ORDER BY TotalRevenue DESC " +
+                 "LIMIT 1";
+    List<Map<String, Object>> results = executeQuery(sql);
+    if (!results.isEmpty()) {
+         Map<String, Object> data = results.get(0);
+         data.putIfAbsent("TotalRevenue", BigDecimal.ZERO); // Ensure TotalRevenue is present, even if null from DB (COALESCE handles this in SQL now)
+         return data;
     }
+    // Return a default map if no data is found
+    Map<String, Object> emptyResult = new HashMap<>();
+    emptyResult.put("CustomerID", "N/A");
+    emptyResult.put("FirstName", "N/A");
+    emptyResult.put("LastName", "N/A");
+    emptyResult.put("TotalRevenue", BigDecimal.ZERO);
+    return emptyResult;
+}
+
+/**
+ * Produces a list of most active flights based on the number of tickets sold.
+ * @param limit The number of top active flights to return.
+ * @return A List of Maps, each containing FlightID, FlightNumber, FromAirportID, ToAirportID, AirlineName and TicketCount.
+ */
+public List<Map<String, Object>> getMostActiveFlights(int limit) {
+    // SQL query to find most active flights by ticket count
+    String sql = "SELECT f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, al.Name AS AirlineName, " +
+                 "COUNT(*) AS TicketCount " + // Counting rows (tickets) for the flight
+                 "FROM Ticket t " +
+                 "JOIN Flight f ON t.FlightID = f.FlightID " +
+                 "JOIN Airline al ON f.AirlineID = al.AirlineID " +
+                 "GROUP BY f.FlightID, f.FlightNumber, f.FromAirportID, f.ToAirportID, al.Name " +
+                 "ORDER BY TicketCount DESC " +
+                 "LIMIT ?";
+    return executeQuery(sql, limit);
+}
     
-    /**
-     * Calculates total revenue generated by a specific FlightID.
-     * Revenue is SUM(TicketFare + BookingFee).
-     * @param flightID The ID of the flight.
-     * @return Total revenue as BigDecimal, or BigDecimal.ZERO if no tickets or flight.
-     */
-    public BigDecimal getRevenueByFlightID(int flightID) {
-        String sql = "SELECT COALESCE(SUM(t.TicketFare + t.BookingFee), 0) AS TotalRevenue " +
-                     "FROM Ticket t " +
-                     "WHERE t.FlightID = ?";
-        List<Map<String, Object>> results = executeQuery(sql, flightID);
-        if (!results.isEmpty() && results.get(0) != null && results.get(0).get("TotalRevenue") != null) {
-            Object revenueObj = results.get(0).get("TotalRevenue");
-            if (revenueObj instanceof BigDecimal) {
-                return (BigDecimal) revenueObj;
-            } else if (revenueObj instanceof Number) {
-                return new BigDecimal(((Number) revenueObj).toString());
-            }
-        }
-        return BigDecimal.ZERO;
-    }
+/**
+ * Calculates detailed revenue generated by a specific FlightID.
+ * Includes number of tickets, total fare, total booking fee, and total revenue.
+ * @param flightID The ID of the flight.
+ * @return A Map containing revenue details, or a default map if no tickets/flight.
+ */
+public Map<String, Object> getRevenueByFlightID(int flightID) {
+    String sql = "SELECT " +
+                 "COUNT(*) as numberOfTickets, " +
+                 "COALESCE(SUM(CAST(t.TicketFare AS DECIMAL(10,2))), 0.00) as totalFare, " +
+                 "COALESCE(SUM(CAST(t.BookingFee AS DECIMAL(10,2))), 0.00) as totalBookingFee, " +
+                 "COALESCE(SUM(CAST(t.TicketFare AS DECIMAL(10,2)) + CAST(t.BookingFee AS DECIMAL(10,2))), 0.00) as totalRevenue " +
+                 "FROM Ticket t " +
+                 "WHERE t.FlightID = ?";
+    List<Map<String, Object>> results = executeQuery(sql, flightID);
 
-    /**
-     * Calculates total revenue generated by a specific AirlineID.
-     * Revenue is SUM(TicketFare + BookingFee) for all tickets on flights of that airline.
-     * @param airlineID The ID of the airline.
-     * @return Total revenue as BigDecimal, or BigDecimal.ZERO if no tickets or airline.
-     */
-    public BigDecimal getRevenueByAirlineID(int airlineID) {
-        String sql = "SELECT COALESCE(SUM(t.TicketFare + t.BookingFee), 0) AS TotalRevenue " +
-                     "FROM Ticket t " +
-                     "JOIN Flight f ON t.FlightID = f.FlightID " +
-                     "WHERE f.AirlineID = ?";
-        List<Map<String, Object>> results = executeQuery(sql, airlineID);
-         if (!results.isEmpty() && results.get(0) != null && results.get(0).get("TotalRevenue") != null) {
-            Object revenueObj = results.get(0).get("TotalRevenue");
-            if (revenueObj instanceof BigDecimal) {
-                return (BigDecimal) revenueObj;
-            } else if (revenueObj instanceof Number) {
-                return new BigDecimal(((Number) revenueObj).toString());
-            }
-        }
-        return BigDecimal.ZERO;
+    if (!results.isEmpty() && results.get(0) != null) {
+        Map<String, Object> reportData = results.get(0);
+        reportData.putIfAbsent("numberOfTickets", 0L);
+        reportData.putIfAbsent("totalFare", BigDecimal.ZERO);
+        reportData.putIfAbsent("totalBookingFee", BigDecimal.ZERO);
+        reportData.putIfAbsent("totalRevenue", BigDecimal.ZERO);
+        return reportData;
+    } else {
+        Map<String, Object> emptyResult = new HashMap<>();
+        emptyResult.put("numberOfTickets", 0L);
+        emptyResult.put("totalFare", BigDecimal.ZERO);
+        emptyResult.put("totalBookingFee", BigDecimal.ZERO);
+        emptyResult.put("totalRevenue", BigDecimal.ZERO);
+        return emptyResult;
     }
+}
 
-    /**
-     * Calculates total revenue generated by a specific CustomerID.
-     * Revenue is SUM(TicketFare + BookingFee).
-     * @param customerID The ID of the customer.
-     * @return Total revenue as BigDecimal, or BigDecimal.ZERO if no tickets for the customer.
-     */
-    public BigDecimal getRevenueByCustomerID(String customerID) {
-        String sql = "SELECT COALESCE(SUM(t.TicketFare + t.BookingFee), 0) AS TotalRevenue " +
-                     "FROM Ticket t " +
-                     "WHERE t.CustomerID = ?";
-        List<Map<String, Object>> results = executeQuery(sql, customerID);
-        if (!results.isEmpty() && results.get(0) != null && results.get(0).get("TotalRevenue") != null) {
-            Object revenueObj = results.get(0).get("TotalRevenue");
-            if (revenueObj instanceof BigDecimal) {
-                return (BigDecimal) revenueObj;
-            } else if (revenueObj instanceof Number) {
-                return new BigDecimal(((Number) revenueObj).toString());
-            }
-        }
-        return BigDecimal.ZERO;
+/**
+ * Calculates detailed revenue generated by a specific AirlineID.
+ * Includes number of tickets, total fare, total booking fee, and total revenue.
+ * @param airlineID The ID of the airline.
+ * @return A Map containing revenue details, or a default map if no tickets/airline.
+ */
+public Map<String, Object> getRevenueByAirlineID(int airlineID) {
+    String sql = "SELECT " +
+                 "COUNT(*) as numberOfTickets, " +
+                 "COALESCE(SUM(CAST(t.TicketFare AS DECIMAL(10,2))), 0.00) as totalFare, " +
+                 "COALESCE(SUM(CAST(t.BookingFee AS DECIMAL(10,2))), 0.00) as totalBookingFee, " +
+                 "COALESCE(SUM(CAST(t.TicketFare AS DECIMAL(10,2)) + CAST(t.BookingFee AS DECIMAL(10,2))), 0.00) as totalRevenue " +
+                 "FROM Ticket t " +
+                 "JOIN Flight f ON t.FlightID = f.FlightID " +
+                 "WHERE f.AirlineID = ?";
+    List<Map<String, Object>> results = executeQuery(sql, airlineID);
+
+    if (!results.isEmpty() && results.get(0) != null) {
+        Map<String, Object> reportData = results.get(0);
+        reportData.putIfAbsent("numberOfTickets", 0L);
+        reportData.putIfAbsent("totalFare", BigDecimal.ZERO);
+        reportData.putIfAbsent("totalBookingFee", BigDecimal.ZERO);
+        reportData.putIfAbsent("totalRevenue", BigDecimal.ZERO);
+        return reportData;
+    } else {
+        Map<String, Object> emptyResult = new HashMap<>();
+        emptyResult.put("numberOfTickets", 0L);
+        emptyResult.put("totalFare", BigDecimal.ZERO);
+        emptyResult.put("totalBookingFee", BigDecimal.ZERO);
+        emptyResult.put("totalRevenue", BigDecimal.ZERO);
+        return emptyResult;
     }
+}
+
+/**
+ * Calculates detailed revenue generated by a specific CustomerID.
+ * Includes number of tickets, total fare, total booking fee, and total revenue.
+ * @param customerID The ID of the customer.
+ * @return A Map containing revenue details, or a default map if no tickets for the customer.
+ */
+public Map<String, Object> getRevenueByCustomerID(String customerID) {
+    String sql = "SELECT " +
+                 "COUNT(*) as numberOfTickets, " +
+                 "COALESCE(SUM(CAST(t.TicketFare AS DECIMAL(10,2))), 0.00) as totalFare, " +
+                 "COALESCE(SUM(CAST(t.BookingFee AS DECIMAL(10,2))), 0.00) as totalBookingFee, " +
+                 "COALESCE(SUM(CAST(t.TicketFare AS DECIMAL(10,2)) + CAST(t.BookingFee AS DECIMAL(10,2))), 0.00) as totalRevenue " +
+                 "FROM Ticket t " +
+                 "WHERE t.CustomerID = ?";
+    List<Map<String, Object>> results = executeQuery(sql, customerID);
+
+    if (!results.isEmpty() && results.get(0) != null) {
+        Map<String, Object> reportData = results.get(0);
+        reportData.putIfAbsent("numberOfTickets", 0L);
+        reportData.putIfAbsent("totalFare", BigDecimal.ZERO);
+        reportData.putIfAbsent("totalBookingFee", BigDecimal.ZERO);
+        reportData.putIfAbsent("totalRevenue", BigDecimal.ZERO);
+        return reportData;
+    } else {
+        Map<String, Object> emptyResult = new HashMap<>();
+        emptyResult.put("numberOfTickets", 0L);
+        emptyResult.put("totalFare", BigDecimal.ZERO);
+        emptyResult.put("totalBookingFee", BigDecimal.ZERO);
+        emptyResult.put("totalRevenue", BigDecimal.ZERO);
+        return emptyResult;
+    }
+}
 
     /**
      * Helper method to get Airline details by ID (e.g., to fetch Name).

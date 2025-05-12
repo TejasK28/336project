@@ -25,7 +25,6 @@ public class ReservationReportServlet extends HttpServlet {
 
     private void loadAdminPortalEssentialData(HttpServletRequest request, MySQL db) {
         // This method ensures that data needed by AdminPortal.jsp's other sections is loaded.
-        // It's similar to what might be in the main /Admin GET handler or other report servlets.
         if (request.getAttribute("employees") == null) {
             String empSql = "SELECT EmployeeID, FirstName, LastName, Email, isAdmin, isCustomerRepresentative FROM Employee";
             List<Map<String, Object>> employeeList = db.executeQuery(empSql);
@@ -56,64 +55,61 @@ public class ReservationReportServlet extends HttpServlet {
         dispatcher.forward(request, response);
     }
 
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("authenticated") == null || !"Admin".equals(session.getAttribute("accType"))) {
-            response.sendRedirect(request.getContextPath() + "/Home.jsp");
+        // Authentication and authorization check
+        if (session == null || session.getAttribute("authenticated") == null ||
+            !"Admin".equals(session.getAttribute("accType"))) { // Assuming "accType" stores role
+            response.sendRedirect(request.getContextPath() + "/Home.jsp"); // Or your designated login page
             return;
         }
 
+        // Retrieve search parameters from the request
         String searchBy = request.getParameter("searchBy");
         String searchValue = request.getParameter("searchValue");
 
-        MySQL db = new MySQL();
-        List<Map<String, Object>> reservations = new ArrayList<>();
-        String reportError = null;
-        String reportTitle = "Reservations";
+        MySQL db = new MySQL(); // Database access object
+        List<Map<String, Object>> reservationsList = new ArrayList<>(); // Initialize to avoid null pointer issues
+        String reservationReportError = null; // For storing error messages
+        String reservationReportTitle = "Reservation Search Results"; // Default title for the report
 
+        // Validate search value
         if (searchValue == null || searchValue.trim().isEmpty()) {
-            reportError = "Search value cannot be empty.";
+            reservationReportError = "Search value cannot be empty.";
         } else {
+            searchValue = searchValue.trim(); // Use trimmed search value
+            // Perform search based on the selected criteria
             if ("flightNumber".equals(searchBy)) {
-                try {
-                    // Flight.FlightNumber is INT in your schema
-                    reservations = db.getReservationsByFlightNumber(searchValue.trim());
-                    reportTitle = "Reservations for Flight Number: " + searchValue;
-                    if (reservations.isEmpty()) {
-                        reportError = "No reservations found for flight number: " + searchValue;
-                    }
-                } catch (NumberFormatException e) {
-                    reportError = "Invalid Flight Number format. Please enter a numeric flight number.";
-                }
+                // The MySQL.java method getReservationsByFlightNumber handles parsing
+                reservationsList = db.getReservationsByFlightNumber(searchValue);
+                reservationReportTitle = "Reservations for Flight Number: " + searchValue;
+                // No explicit error message if list is empty; JSP will handle display
             } else if ("customerName".equals(searchBy)) {
-                reservations = db.getReservationsByCustomerName(searchValue.trim());
-                reportTitle = "Reservations for Customer name containing: '" + searchValue + "'";
-                 if (reservations.isEmpty()) {
-                    reportError = "No reservations found for customer name containing: '" + searchValue + "'";
-                }
+                reservationsList = db.getReservationsByCustomerName(searchValue);
+                reservationReportTitle = "Reservations for Customer name containing: '" + searchValue + "'";
             } else if ("customerID".equals(searchBy)){
-                reservations = db.getReservationsByCustomerID(searchValue.trim());
-                reportTitle = "Reservations for Customer ID: " + searchValue;
-                if (reservations.isEmpty()) {
-                    reportError = "No reservations found for Customer ID: " + searchValue;
-                }
-            }
-             else {
-                reportError = "Invalid search type selected.";
+                reservationsList = db.getReservationsByCustomerID(searchValue);
+                reservationReportTitle = "Reservations for Customer ID: " + searchValue;
+            } else {
+                reservationReportError = "Invalid search type selected.";
             }
         }
 
-        request.setAttribute("reservationsList", reservations);
-        request.setAttribute("reservationReportError", reportError);
-        request.setAttribute("reservationReportTitle", reportTitle);
-        request.setAttribute("searchByInput", searchBy);
-        request.setAttribute("searchValueInput", searchValue);
-        request.setAttribute("reservationReportGenerated", true);
-        request.setAttribute("showReservationReportSection", true); // Keep section visible
+        // Set attributes for the JSP
+        request.setAttribute("reservationsList", reservationsList);
+        request.setAttribute("reservationReportError", reservationReportError);
+        request.setAttribute("reservationReportTitle", reservationReportTitle);
+        request.setAttribute("searchByInput", searchBy); // For repopulating the form
+        request.setAttribute("searchValueInput", searchValue); // For repopulating the form
+        request.setAttribute("reservationReportGenerated", true); // Indicate that a search was attempted
 
-        loadAdminPortalEssentialData(request, db); // Reload other essential data for AdminPortal.jsp
+        // Load other essential data needed by AdminPortal.jsp
+        // Assuming loadAdminPortalEssentialData is defined in your servlet:
+        loadAdminPortalEssentialData(request, db);
 
-        RequestDispatcher dispatcher = request.getRequestDispatcher("AdminPortal.jsp");
+        // Forward to the JSP for display
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/AdminPortal.jsp");
         dispatcher.forward(request, response);
     }
 }
