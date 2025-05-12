@@ -427,6 +427,27 @@ public class MySQL {
         }
     }
 
+//    public List<Map<String, Object>> getFlightsAtAirport(String airport_id) {
+//        String sql = """
+//          SELECT 
+//            f.FlightID,
+//            f.AirlineID,
+//            f.FlightNumber,
+//            f.FromAirportID,
+//            f.ToAirportID,
+//            f.DepartTime,
+//            f.ArrivalTime,
+//            f.OperatingDays,
+//            f.AircraftID,
+//            a.Model AS AircraftModel
+//          FROM Flight f
+//          JOIN Aircraft a USING (AircraftID)
+//          WHERE f.ToAirportID   = ?
+//             OR f.FromAirportID = ?
+//        """;
+//        return executeQuery(sql, airport_id, airport_id);
+//    }
+    
     public List<Map<String, Object>> getFlightsAtAirport(String airport_id) {
         String sql = """
           SELECT 
@@ -441,12 +462,14 @@ public class MySQL {
             f.AircraftID,
             a.Model AS AircraftModel
           FROM Flight f
-          JOIN Aircraft a USING (AircraftID)
+          LEFT JOIN Aircraft a
+            ON f.AircraftID = a.AircraftID
           WHERE f.ToAirportID   = ?
              OR f.FromAirportID = ?
         """;
         return executeQuery(sql, airport_id, airport_id);
     }
+
 
 
     public boolean addAircraft(String airlineId, String model, int totalSeats, String configStr) {

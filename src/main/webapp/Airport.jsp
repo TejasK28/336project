@@ -1,83 +1,69 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8" import="java.util.List,java.util.Map,java.util.Set"%>
+         pageEncoding="UTF-8"
+         import="java.util.List, java.util.Map" %>
+<%
+  @SuppressWarnings("unchecked")
+  List<Map<String,Object>> flights =
+      (List<Map<String,Object>>) request.getAttribute("airport_flights");
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Airport Flights</title>
-  <link rel="stylesheet" href="<%=request.getContextPath()%>/css/styles.css">
+  <title>Flights at <%= request.getParameter("airportId") %></title>
+  <link rel="stylesheet" href="<%= request.getContextPath() %>/css/styles.css">
 </head>
 <body>
-  <jsp:include page="header.jsp" />
+  <jsp:include page="header.jsp"/>
   <main class="main-content">
     <h1 class="page-title">Flights at Airport</h1>
 
-    <% List<Map<String, Object>> flights =
-         (List<Map<String, Object>>) request.getAttribute("airport_flights");
-       if (flights != null && !flights.isEmpty()) {
-         Set<String> columns = flights.get(0).keySet();
-    %>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <% for (String col : columns) { %>
-              <th><div><%= col %></div></th>
-            <% } %>
-            <th><div>Aircraft Model</div></th>
-            <th><div>Actions</div></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% for (Map<String, Object> flight : flights) { %>
+    <% if (flights != null && !flights.isEmpty()) { %>
+      <div class="table-container">
+        <table>
+          <thead>
             <tr>
-              <% for (String col : columns) { %>
-                <td><%= flight.get(col) %></td>
-              <% } %>
-              <td><%= flight.get("AircraftModel") %></td>
+              <th>Flight ID</th>
+              <th>Flight Number</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Departure</th>
+              <th>Arrival</th>
+              <th>Days</th>
+              <th>Aircraft</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (Map<String,Object> f : flights) {
+                 Object model = f.get("AircraftModel");
+            %>
+            <tr>
+              <td><%= f.get("FlightID") %></td>
+              <td><%= f.get("FlightNumber") %></td>
+              <td><%= f.get("FromAirportID") %></td>
+              <td><%= f.get("ToAirportID") %></td>
+              <td><%= f.get("DepartTime") %></td>
+              <td><%= f.get("ArrivalTime") %></td>
+              <td><%= f.get("OperatingDays") %></td>
+              <td><%= (model != null ? model : "Unassigned") %></td>
               <td class="actions">
                 <form action="<%=request.getContextPath()%>/CustRep/editFlight"
-                      method="get" style="display:inline-block;margin-right:5px;">
-                  <input type="hidden" name="flightId"
-                         value="<%=flight.get("FlightID")%>" />
-                  <button 
-                      type="submit" 
-                      style="
-                        background-color: #28a745;
-                        color: #fff;
-                        border: none;
-                        border-radius: 4px;
-                        padding: 6px 12px;
-                        font-size: 0.9rem;
-                        cursor: pointer;
-                      ">
-                    Edit
-                  </button>
+                      method="get" style="display:inline-block">
+                  <input type="hidden" name="flightId" value="<%=f.get("FlightID")%>"/>
+                  <button type="submit" class="btn btn-green">Edit</button>
                 </form>
                 <form action="<%=request.getContextPath()%>/CustRep/deleteFlight"
-                      method="post" style="display:inline-block;">
-                  <input type="hidden" name="flightId"
-                         value="<%=flight.get("FlightID")%>" />
-                  <button 
-                      type="submit" 
-                      style="
-                        background-color: #dc3545;
-                        color: #fff;
-                        border: none;
-                        border-radius: 4px;
-                        padding: 6px 12px;
-                        font-size: 0.9rem;
-                        cursor: pointer;
-                      ">
-                    Delete
-                  </button>
+                      method="post" style="display:inline-block">
+                  <input type="hidden" name="flightId" value="<%=f.get("FlightID")%>"/>
+                  <button type="submit" class="btn btn-red">Delete</button>
                 </form>
               </td>
             </tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
     <% } else { %>
       <p>No flights found for this airport.</p>
     <% } %>
