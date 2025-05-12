@@ -25,7 +25,10 @@ import java.util.Map;
     "/createFlight",
     "/createAircraft",
     "/createAirport",
-    "/CustRep/waitlist"
+    "/CustRep/waitlist",
+    "/CustRep/createFlight",
+    "/CustRep/createAircraft",
+    "/CustRep/createAirport"
 })
 public class CustRep extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -216,17 +219,20 @@ public class CustRep extends HttpServlet {
             return;
         }
 
-        if ("/deleteFlight".equals(servletPath)) {
-            String flightId = request.getParameter("flightId");
-            String referer = request.getHeader("Referer");
-            if (!db.deleteFlightByFID(flightId)) {
-                request.setAttribute("deleteFlightFailed", "Deleting the flight failed!");
-            }
-            response.sendRedirect(referer);
-            return;
-        }
+        if ("/CustRep/deleteFlight".equals(servletPath)) {
+        	  String fid = request.getParameter("flightId");
+        	  // 1) drop tickets
+        	  db.executeUpdate("DELETE FROM Ticket WHERE FlightID = ?", fid);
+        	  // 2) now delete flight
+        	  if (!db.deleteFlightByFID(fid)) {
+        	    request.setAttribute("deleteFlightFailed", "Deleting the flight failed!");
+        	  }
+        	  response.sendRedirect(request.getHeader("Referer"));
+        	  return;
+        	}
 
-        if ("/editFlight".equals(servletPath)) {
+
+        if ("/CustRep/editFlight".equals(servletPath)) {
             // --- existing editFlight POST logic ---
             String flightIdStr   = request.getParameter("FlightID");
             String flightNumStr  = request.getParameter("FlightNumber");
@@ -274,7 +280,7 @@ public class CustRep extends HttpServlet {
             return;
         }
 
-        if ("/editAirport".equals(servletPath)) {
+        if ("/CustRep/editAirport".equals(servletPath)) {
             // --- existing editAirport POST logic ---
             String oldAID  = request.getParameter("originalAID");
             String newAID  = request.getParameter("identifierCode");
@@ -308,7 +314,7 @@ public class CustRep extends HttpServlet {
             return;
         }
 
-        if ("/deleteAirport".equals(servletPath)) {
+        if ("/CustRep/deleteAirport".equals(servletPath)) {
             // --- existing deleteAirport logic ---
             String aID = request.getParameter("airportID");
             if (!db.deleteAirport(aID)) {
@@ -318,7 +324,7 @@ public class CustRep extends HttpServlet {
             return;
         }
 
-        if ("/deleteAircraft".equals(servletPath)) {
+        if ("/CustRep/deleteAircraft".equals(servletPath)) {
             String acID   = request.getParameter("aircraftID");
             String referer = request.getHeader("Referer");
             if (!db.deleteAircraft(acID)) {
@@ -328,7 +334,7 @@ public class CustRep extends HttpServlet {
             return;
         }
 
-        if ("/editAircraft".equals(servletPath)) {
+        if ("/CustRep/editAircraft".equals(servletPath)) {
             // --- existing editAircraft POST logic ---
             String acID      = request.getParameter("aircraftID");
             String airlineId = request.getParameter("AirlineID");

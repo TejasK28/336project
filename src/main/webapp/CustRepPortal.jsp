@@ -54,7 +54,7 @@
                             </td>
                             <td>
                                 <form action="${pageContext.request.contextPath}/CustRep/deleteAirport" method="post">
-  <input type="hidden" name="airportID" value="${ap.AirportID}"/>
+  <input type="hidden" name="airportID" value="<%= ap.get("AirportID") %>"/>
   <button style="background-color:red">Delete</button>
 </form>
 

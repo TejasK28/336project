@@ -28,7 +28,7 @@
         <% if (flight == null) { %>
     <div class="error-banner">No flight data available.</div>
 <% } else { %>
-<form class="full-form" action="<%=request.getContextPath()%>/editFlight" method="post">
+<form class="full-form" action="<%=request.getContextPath()%>/CustRep/editFlight" method="post">
     <!-- Hidden FlightID -->
     <input type="hidden" name="FlightID" value="<%=flight.get("FlightID")%>" />
 
