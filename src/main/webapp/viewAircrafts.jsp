@@ -54,7 +54,7 @@
             </td>
             <td>
             
-           	<form method="post"	action="<%= request.getContextPath() + "/deleteAircraft" %>">
+           	<form method="post"	action="<%= request.getContextPath() + "/CustRep/deleteAircraft" %>">
            		<input type="hidden" name="aircraftID" value="<%= ac.get("AircraftID") %>">
            		<button type="submit" style="background-color: red;">Delete</button>	
            	</form>

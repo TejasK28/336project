@@ -54,7 +54,7 @@
                     Edit
                   </button>
                 </form>
-                <form action="<%=request.getContextPath()%>/deleteFlight"
+                <form action="<%=request.getContextPath()%>/CustRep/deleteFlight"
                       method="post" style="display:inline-block;">
                   <input type="hidden" name="flightId"
                          value="<%=flight.get("FlightID")%>" />
