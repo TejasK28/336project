@@ -22,6 +22,7 @@ public class MySQL {
 
     private String dburl = "jdbc:mysql://localhost:3306/project";
     private String dbuname = "root";
+    private String dbpassword = "rootrootroot";
     private String dbdriver = "com.mysql.cj.jdbc.Driver";
 
     /*
