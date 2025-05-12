@@ -30,6 +30,12 @@ The above are the project specifications that are required to run this properly.
 2. Servlet files will create a connection through mysql jar file and will send in a query
 3. The response is also handled in the Servlet file
 
+# Credentials
+
+Customer : CUST001/pass
+Admin: admin/adminpass
+Customer Rep : admin/adminpass (you can also login as admin and add more as you wish and check them as customer rep)
+
 ## User Functionality
 
 ✅ Let people search for flights between two airports  
